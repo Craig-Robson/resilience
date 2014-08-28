@@ -9,8 +9,7 @@ v5_4_1 of main resilince module.
 Last good version - run_ia_analysis or run_inter_analysis
 ********
 """
-#import networkx
-import networkx as nx
+
 import sys, ogr
 
 #specify location of module and import
@@ -18,7 +17,7 @@ sys.path.append('C:/Users/Craig/GitRepo/nx_pgnet')
 sys.path.append("C:/a8243587_DATA/GitRepo/nx_pgnet")
 sys.path.append("C:/a8243587_DATA/resilience_module")
 import interdependency_analysis_v5_4_3 as ia
-import nx_pgnet, tools
+import nx_pgnet
 
 #create a network using networkx - can use any of the networkx generators or 
 #node and edge lists
