@@ -3,44 +3,72 @@
 Created on Sat Mar 22 12:42:07 2014
 
 @author: a8243587
+
+Verson 1_4_0 - uses metric dicts rather than the metric lists
+
+previuos version - outputs
+
 """
 
 #custom modules
 import error_classes
 import tools
 
-def write_to_db(graphparameters,parameters):
+def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
     '''Writes a copy of the network to the database along with any attributes 
     which have been calculated. Called at end of step function.
     Inputs: graphparamerers and parameters
     Returns:   True/False '''
-    metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges,write_step_to_db,db_parameters = parameters
-    networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics = graphparameters
     GA, GB, GtempA, GtempB = networks
           
     import sys, ogr
     sys.path.append('C:/Users/Craig/GitRepo/nx_pgnet')
     import nx_pgnet
-    conn, con, net_name_a, net_name_b, save_a, save_b = db_parameters
-    conn = ogr.Open(conn)     
+    conn, conn2, net_name_a, net_name_b, save_a, save_b = db_parameters
+    conn = ogr.Open(conn)
     
     if save_a:
-        #write A
+        print 'Writing out network(s)'
+        #write network A
         if i == -99: return        
-        print 'WRITING NETWORK A TO DATABASE, i is: ', i
         GAWrite = GtempA.copy()
-        nx_pgnet.write(conn).pgnet(GAWrite,(net_name_a+'_'+str(i)),-1,overwrite=True,node_equality_key='id_')
-    
+        net_name = net_name_a+'_'+str(i)
+        
+        nx_pgnet.write(conn).pgnet(GAWrite,net_name,27700,overwrite=True,
+                directed=False,multigraph=False)
+
+        #nx_pgnet.write(conn).pgnet(GAWrite,net_name,-1,overwrite=True,node_equality_key='id_')
+
     if save_b:    
-        #write B
+        #write network B
         if i == -99: return  
-        print 'WRITING NETWORK B TO DATABASE'
-        GBWrite = GB.copy()
-        nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),-1,overwrite=True,node_equality_key='id_')
-        if DEPENDENCY:
-            #write depedency edges
-            pass
-        elif INTERDEPENDENCY:
+        GBWrite = GtempB.copy()
+        nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),27700,overwrite=True)
+        #nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),-1,overwrite=True,node_equality_key='id_')
+        if failure['dependency']:
+            #convert to use exisitng connection rather than the once created by psycopg2
+            #allSQL='SELECT * FROM "Inter_Lines"'
+            #for row in conn.ExecuteSQL(allSQL):a_to_b_edges.append([row.p,row.t])
+            #sql to create a table in the db for this time step
+            import psycopg2
+            con = psycopg2.connect(database=conn2['dbname'],user=conn2['user'],password=conn2['password'],port=conn2['port'])
+            cur = con.cursor()
+            table_name_old = 'inter_edges_at_t'
+            table_name_new = 'Inter_edges_at_t_%s'%(i)
+            cur.execute("DROP TABLE IF EXISTS %s" %(table_name_old))
+            cur.execute("CREATE TABLE %s (id INT PRIMARY KEY, netA_node INT, netB_node INT)" %(table_name_old))
+            con.commit()
+            
+            k = 0
+            for edge in a_to_b_edges:
+                 cur.execute("""INSERT INTO inter_edges_at_t VALUES (%s,%s,%s)""",
+                    (k,edge[0],edge[1]))
+                 k += 1
+            
+            con.commit()
+            rename_db_table(conn2,table_name_old,table_name_new)
+            
+        elif failure['interdependency']:
             #write interdependency
             pass
     return
@@ -48,35 +76,77 @@ def write_to_db(graphparameters,parameters):
 def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameters):
     conn, conn2, net_name_a, net_name_b, save_a, save_b = db_parameters
     defaultA = 'network_a'; defaultB = 'network_b'
-    if i == 1: 
-        create_db_res_table(conn2,defaultA)
-        if not STAND_ALONE: create_db_res_table(conn2,defaultB)
+    
+    if i == 0: 
+        create_db_res_table(conn2,defaultA,optionA)
+        if not STAND_ALONE: create_db_res_table(conn2,defaultB,optionB)
     if i <> -99:
         import psycopg2
         con = psycopg2.connect(database=conn2['dbname'],user=conn2['user'],password=conn2['password'],port=conn2['port'])
         cur = con.cursor()
-        test=[45,"test",]
+        #-----------------write basic metrics out------------------------------
         #can't figure out how to have dynamic name variable and allow text to be written out to table as well
-        cur.execute("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s,%s)""", 
-                    (i,basicA[2][i],basicA[3][i],basicA[4][i],basicA[5][i],test[1]))
-        if not STAND_ALONE:
-            cur.execute("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s,%s)""", 
-                    (i,basicB[2][i],basicB[3][i],basicB[4][i],basicB[5][i],test[1]))
+        cur.execute("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s,%s)""",
+                    (i,basicA['no_of_nodes'][i],basicA['number_of_edges'][i],
+                     basicA['number_of_components'][i],basicA['no_of_isolated_nodes'][i],basicA['nodes_removed'][i]))
         con.commit()
+        #-----------------write option metrics out-----------------------------
+        for keys in optionA:
+            if optionA[keys]<>False and optionA[keys]<>True:
+                if keys=='isolated_nodes_removed':
+                    cur.execute("""UPDATE network_a SET isolated_nodes_removed='None' WHERE time_step=%s""" %(i))
+                elif keys=='isolated_nodes':
+                    cur.execute("""UPDATE network_a SET isolated_nodes='None' WHERE time_step=%s""" %(i))
+                elif keys=='subnodes':
+                    cur.execute("""UPDATE network_a SET subnodes='None' WHERE time_step=%s""" %(i))
+                elif optionA[keys][i]==None:
+                    cur.execute("""UPDATE network_a SET %s='None' WHERE time_step=%s"""%(keys,i))
+                else:
+                    cur.execute("""UPDATE network_a SET %s=%s WHERE time_step=%s""" %(keys,optionA[keys][i],i))
+            con.commit()
+
+        if not STAND_ALONE:
+            #if dependency or interdependency
+            #---------------write basic metrics out----------------------------
+            cur.execute("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s,%s)""", 
+                    (i,basicB['no_of_nodes'][i],basicB['number_of_edges'][i],
+                     basicB['number_of_components'][i],basicB['no_of_isolated_nodes'][i],basicB['nodes_removed'][i]))
+            con.commit()
+            
+            #---------------write option metrics out---------------------------
+            for keys in optionB:
+                if optionB[keys]<>False and optionB[keys]<>True:
+                    if keys=='isolated_nodes_removed':
+                        cur.execute("""UPDATE network_b SET isolated_nodes_removed='None' WHERE time_step=%s""" %(i))
+                    elif keys=='isolated_nodes':
+                        cur.execute("""UPDATE network_b SET isolated_nodes='None' WHERE time_step=%s""" %(i))
+                    elif keys=='subnodes':
+                        cur.execute("""UPDATE network_b SET subnodes='None' WHERE time_step=%s""" %(i))
+                    elif optionB[keys][i]==None:
+                        print 'the key this time is:', keys
+                        cur.execute("""UPDATE network_a SET %s='None' WHERE time_step=%s"""%(keys,i))
+                    else:
+                        cur.execute("""UPDATE network_b SET %s=%s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
+                    con.commit()
         cur.close();con.close() 
     else:
+        #if last iteration rename tabkes to something more specific
         rename_db_table(conn2,defaultA,table_name_new='results_'+net_name_a)
         if not STAND_ALONE:
             rename_db_table(conn2,defaultB,table_name_new='results_'+net_name_b)
     return
 
-def create_db_res_table(con,table_name):
+def create_db_res_table(con,table_name,option):
     import psycopg2
     con = psycopg2.connect(database=con['dbname'],user=con['user'],password=con['password'],port=con['port'])
     cur = con.cursor()
     cur.execute("DROP TABLE IF EXISTS %s" %(table_name))
-    cur.execute("CREATE TABLE %s (time_step INT PRIMARY KEY, No_of_Nodes INT, No_of_Edges INT, No_of_Comp INT, No_of_Isolated_Nodes INT, testing varchar)" %(table_name))
-    con.commit();cur.close();con.close()
+    cur.execute("CREATE TABLE %s (time_step INT PRIMARY KEY, No_of_Nodes INT, No_of_Edges INT, No_of_Comp INT, No_of_Isolated_Nodes INT, nodes_removed varchar)" %(table_name))
+    con.commit()
+    for keys in option:
+        cur.execute("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
+    con.commit()
+    cur.close();con.close()
     return
 
 def rename_db_table(con,table_name_old,table_name_new):
@@ -88,23 +158,23 @@ def rename_db_table(con,table_name_old,table_name_new):
     con.commit();cur.close();con.close()
     return
 
-def outputresults(graphparameters, parameters,logfilepath=None,multiiterations=False):
+def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiterations=False):
     '''Controls how the results are output.
     Inputs: graphparametes and parameters containers
     Returns: all sets of metrics in a single container '''
     error = None
     #unpacking the variables
-    networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics = graphparameters    
+    networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
+    failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
+    basicA,basicB,optionA,optionB,interdependency,cascading=metrics
     #if more than one simualtion has been run over the same network
     if multiiterations == True:
         #send to the method for calculating the averages and writing the results out
-        basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B, error = average_txtresults(graphparameters, parameters,error)
+        basicA, basicB, optionA, optionB, error = average_txtresults(graphparameters, parameters,error)
         #if an error occurs
         if error <> None:
             raise error_classes.CalculationError('Error. Error in calculating the averages for the output.')
     else:
-        #unpack the parameters
-        metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges, write_step_to_db, db_parameters = parameters
         try:
             #open output file
             outputfile = open(fileName,'a')
@@ -113,7 +183,7 @@ def outputresults(graphparameters, parameters,logfilepath=None,multiiterations=F
         #send to the textout function to write the results out
         txtout(outputfile,graphparameters, parameters)
     #pack the metric values together again
-    values = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
+    values = basicA, basicB, optionA, optionB  
     return values,error       
     
 def average_txtresults(graphparameters, parameters,error):

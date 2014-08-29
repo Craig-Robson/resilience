@@ -3,6 +3,10 @@
 Created on Sat Mar 22 12:09:21 2014
 
 @author: a8243587
+
+Version V1_4_0 - added failure from_list method
+
+
 """
 
 
@@ -73,7 +77,14 @@ def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
     G = network_handling.remove_edges(G, node, INTERDEPENDENCY)
     G.remove_node(node)
     #return the network and the node which was removed
-    return G,node    
+    return G,node
+    
+def sequential_from_list(G,INTERDEPENDENCY,fail_list,i):
+    '''
+    '''
+    node = fail_list[i]
+    G.remove_node(node)
+    return G, node
     
 def cascading_failure(G, dlist, dead,k,subnodes_A, isolated_nodes_A, removed_nodes,INTERDEPENDENCY): #start node chosen at random  #take out all neighbors
     '''Sequential failure code where all the neighbours of the node(s) removed

@@ -47,9 +47,7 @@ def check_node_removed(node, subnodes, isolated_nodes):
     check_dependency_edges function'''
     #create required variables
     REMOVED = False    
-    h = 0
-    print 'errors here'
-    print isolated_nodes    
+    h = 0   
     #for all isoalted nodes, check if node is part of the list
     while h < len(isolated_nodes):
         p = 0
@@ -59,32 +57,25 @@ def check_node_removed(node, subnodes, isolated_nodes):
              p += 1
         h += 1
     return REMOVED
-        
-#do not want to remove isolates at the moment    
-def handle_isolates(G): #remove isolated nodes 
-    '''Removes any isolated nodes. Returns the adjusted network and 
-    the list of nodes removed.
-    Input: network
-    Return: network, isolated nodes''' 
-    #create list of isolated nodes
-    isolatednodes = nx.isolates(G)
-    #if there are no edges in the network, then all nodes are isolates
-    if G.number_of_edges() == 0: 
-        raise error_classes.GraphError('Error. The network is dissconnected, there are no edges left in the network.')
-    else:
-        #remove all nodes which are in the isolated list
-        G.remove_nodes_from(isolatednodes) 
-    return G,isolatednodes
-        
-def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes):
+              
+
+
+def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edges,net):
     '''Removed any isolated nodes in the given network and any associated 
     edges. Retruns the eddited network and a number of lists which require 
     updating due to the removal.
     Input: 
     Return: '''
-    #remove any isolated nodes and assocaited edges
-    Gtemp, isolatednodes = handle_isolates(Gtemp)       
-        
+   
+    #remove any isolated nodes and assocaited edges      
+    isolatednodes = nx.isolates(G)
+    if G.number_of_edges() == 0: 
+        #print 'The number of nodes left is:', G.number_of_nodes()
+        raise error_classes.GraphError('Error. The network is dissconnected, there are no edges left in the network.')
+    else:
+        #remove all nodes which are in the isolated list
+        G.remove_nodes_from(isolatednodes) 
+       
     j = 0
     #loop through the isolated nodes and remove from the node list
     while j < len(isolatednodes):
@@ -97,10 +88,31 @@ def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node
         j += 1
     
     #update some of the lists to record the simulation process
-    isolated_nodes.append(isolatednodes)  
-    isolated_n_count_removed.append(len(isolatednodes))
-    node_count_removed.append(node_count_removed.pop()+len(isolatednodes))
+    option['isolated_nodes'].append(isolatednodes)  
+    option['no_of_isolated_nodes_removed'].append(len(isolatednodes))
+    basic['no_of_nodes_removed'].append(basic['no_of_nodes_removed'].pop()+len(isolatednodes))
     
+    
+    tot = 0
+    if net == 'B':
+        for nd in isolatednodes:
+            v = 0
+            found = False
+            while v < len(a_to_b_edges):
+                if int(nd) == int(a_to_b_edges[v][1]):
+                    a_to_b_edges.pop(v)
+                    found = True
+                    tot += 1
+                    v -= 1
+                    if found==False:
+                        print 'node is:', nd
+                        for item in a_to_b_edges:
+                            print item[1]
+                        exit()
+                v += 1
+    print 'RUNNING REMOVE_ISOLATES FROM',net,'. Number of ISOLATES removed:',len(isolatednodes),'(',isolatednodes,');','Dependency edges removed:', tot
+    '''
+    What this does should be done via check dependency edges - which now happens I think
     #remove from to and from lists where the dependence link is now invalid as to node removed as isolated
     v = 0
     while v < len(isolatednodes):
@@ -112,13 +124,14 @@ def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node
                 vf -= 1
             vf += 1
         v += 1       
-             
-    return Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes
-
+    '''
+    return G,node_list,basic,option,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges
+    
 def handle_sub_graphs(nodelists, edgelists):
     ''''Used for removing subgraphs from a network, but converting them to 
     node and edge lists so can be re-built for analysis purposes. Called from 
     analysis_B'''
+    
     #build network from node and edge lists,identify any new subgraphs, and store all graphs as node and edge lists
     G = nx.Graph()
     G.add_nodes_from(nodelists)    
@@ -151,10 +164,10 @@ def handle_sub_graphs(nodelists, edgelists):
 
 
 '''interdependency function'''
-def check_dependency_edges(networks,node,basic_metrics_A,basic_metrics_B,option_metrics_A,option_metrics_B,to_b_nodes,from_a_nodes,temp): 
+def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges,temp,INTERDEPENDENCY): 
     ''' 
     check to see if any interdependency edges have a to or from node which is 
-    one of the nods to be removed(damaged) 
+    one of the nodes to be removed(damaged) 
     -if so, find the node at other end of the edge in network B
     -remove all edges connected to that node so that node can be removed and 
         full effect in network B modelled
@@ -163,57 +176,67 @@ def check_dependency_edges(networks,node,basic_metrics_A,basic_metrics_B,option_
          -which produce more interdependency failures - when to stop checking????
          -could this be another method of analysis    
     ''' 
-    GA, GB, GtempA, GtempB = networks
-    nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A,isolated_n_count_A = basic_metrics_A
-    nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B,isolated_n_count_B = basic_metrics_B
-    size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A = option_metrics_A
-    size_of_components_B,giant_component_size_B,av_nodes_in_components_B,isolated_nodes_B,isolated_n_count_removed_B,subnodes_B,subnodes_count_B,path_length_B,av_path_length_components_B,giant_component_av_path_length_B,av_path_length_geo_B,average_degree_B,inter_removed_count_B = option_metrics_B
-    print 'before B is affected:'    
-    print 'node of interest is:', node
-    INTERDEPENDENCY = False   
-    print 'A nodes:'
-    print GtempA.nodes()
-    print 'B ndoes:'
-    print GtempB.nodes()
-    print GB.nodes()
-    print 'FROM A nodes:'
-    print from_a_nodes
-    print to_b_nodes
-    
+    GA, GB, GtempA, GtempB = networks   
+    nodes_removed_from_b=[]
     i=0
-    while i < len(from_a_nodes): #for the length of a node list
-        if node == from_a_nodes[i]: #if the removed value coresponds to a from node in the interdependency edges
-            tnode = to_b_nodes[i] #get the to node at the other end of the dependency edge                                                     
-            #check node has not been removed through being isolated or member of a subgraph            
-            REMOVED = check_node_removed(tnode, subnodes_B, isolated_nodes_B) 
-            #if node still in network
-            if REMOVED == False:
-                #remove all edges which feature the to node
-                GtempB = remove_edges(GtempB,tnode,INTERDEPENDENCY) 
-                try:                
-                    GtempB.remove_node(tnode) #remove the to node
-                except:
-                    raise error_classes.SearchError('Error. Could not find the node in the network.')
-                    error = 0001
-                    return error
-                #add node to required metrics/counts
-                node_count_removed_B.append(node_count_removed_B.pop()+1)             
-                inter_removed_count_B.append(inter_removed_count_B.pop()+1)
-                temp.append(tnode) 
-                to_b_nodes.pop(i) 
-                from_a_nodes.pop(i) 
-                #edit i so no list items are mised 
-                i -= 1  
-            elif REMOVED == True: 
-                #if node has already been removed in another process
-                raise error_classes.SearchError('Error. Node has already been removed.')
-        i += 1
+    print 'Nodes in network A being removed:', nodes_to_check
+    for node in nodes_to_check:
+        z = 0
+        while z < len(a_to_b_edges):
+        #for edge in a_to_b_edges:
+            edge = a_to_b_edges[z]
+            if node == edge[0]:
+                REMOVED = check_node_removed(edge[1], optionB['subnodes'], optionB['isolated_nodes']) #check node in B is still there - it should be
+                if not REMOVED: 
+                    GtempB.remove_node(edge[1])
+                    #print 'removing dependency edge (',a_to_b_edges[z],')'
+                    #print 'removing node from B (',edge[1],')'
+                    a_to_b_edges.pop(z)
+                    nodes_removed_from_b.append(edge[1])
+                    z-=1
+                else: raise error_classes.SearchError('Error. Node has already been removed.')
+            z += 1                
+              
+        
+    '''
+        while i < len(from_a_nodes): #for the length of a node list
+            if node == from_a_nodes[i]: #if the removed value coresponds to a from node in the interdependency edges
+                tnode = to_b_nodes[i] #get the to node at the other end of the dependency edge                                                     
+                #check node has not been removed through being isolated or member of a subgraph            
+                REMOVED = check_node_removed(tnode, optionB['subnodes'], optionB['isolated_nodes']) 
+                #if node still in network
+                if not REMOVED:
+                    #remove all edges which feature the to node
+                    GtempB = remove_edges(GtempB,tnode,INTERDEPENDENCY) 
+                    try:                
+                        GtempB.remove_node(tnode) #remove the to node
+                    except:
+                        raise error_classes.SearchError('Error. Could not find the node in the network.')
+                        error = 0001
+                        return error
+                    #add node to required metrics/counts
+                    nodes_removed.append(tnode)
+                    temp.append(tnode) 
+                    to_b_nodes.pop(i) 
+                    from_a_nodes.pop(i)
+                    a_to_b_edges.pop(i)
+                    #edit i so no list items are mised 
+                    i -= 1  
+                elif REMOVED: 
+                    #if node has already been removed in another process
+                    raise error_classes.SearchError('Error. Node has already been removed.')
+            else:
+                #no dependent nodes
+                pass
+            i += 1
+    '''
+    #if k==False: print 'node removed has no dependency edges:', node
+    
+    basicB['no_of_nodes_removed'].append(len(nodes_removed_from_b))  
+    basicB['nodes_removed'].append(nodes_removed_from_b)
+    optionB['no_of_inter_removed'].append(len(nodes_removed_from_b))
     networks =  GA, GB, GtempA, GtempB
-    basic_metrics_A = nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A,isolated_n_count_A
-    basic_metrics_B = nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B,isolated_n_count_B
-    option_metrics_A = size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A
-    option_metrics_B = size_of_components_B,giant_component_size_B,av_nodes_in_components_B,isolated_nodes_B,isolated_n_count_removed_B,subnodes_B,subnodes_count_B,path_length_B,av_path_length_components_B,giant_component_av_path_length_B,av_path_length_geo_B,average_degree_B,inter_removed_count_B
-    args = networks,node,basic_metrics_A,basic_metrics_B,option_metrics_A,option_metrics_B,to_b_nodes,from_a_nodes,temp    
+    args = networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges
     return args
 
 def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
@@ -249,7 +272,7 @@ def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
             v += 1
         return node_list, to_b_nodes, from_a_nodes
 
-def whole_graph_av_path_length(Gtemp):
+def whole_graph_av_path_length(Gtemp,length=''):
     'Calcualte the average path length the whole network when it is made up of many subgraphs. *This is outdated by easier methods within the code blocks themeselves.'
     #create the required varaibles
     number_of_components_used = 0 
@@ -259,7 +282,7 @@ def whole_graph_av_path_length(Gtemp):
         if nx.number_of_nodes(g) <= 1:
             pass
         else:
-            average += nx.average_shortest_path_length(g)                 
+            average += nx.average_shortest_path_length(g,length)     
             number_of_components_used += 1            
     #calcualte the average if the average is greater than zero
     if average == 0:
