@@ -13,6 +13,7 @@ previuos version - outputs
 #custom modules
 import error_classes
 import tools
+import ogr,sys
 
 def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
     '''Writes a copy of the network to the database along with any attributes 
@@ -20,11 +21,9 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
     Inputs: graphparamerers and parameters
     Returns:   True/False '''
     GA, GB, GtempA, GtempB = networks
-          
-    import sys, ogr
     sys.path.append('C:/Users/Craig/GitRepo/nx_pgnet')
     import nx_pgnet
-    conn, conn2, net_name_a, net_name_b, save_a, save_b = db_parameters
+    conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     conn = ogr.Open(conn)
     
     if save_a:
@@ -33,129 +32,160 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
         if i == -99: return        
         GAWrite = GtempA.copy()
         net_name = net_name_a+'_'+str(i)
-        
-        nx_pgnet.write(conn).pgnet(GAWrite,net_name,27700,overwrite=True,
-                directed=False,multigraph=False)
-
-        #nx_pgnet.write(conn).pgnet(GAWrite,net_name,-1,overwrite=True,node_equality_key='id_')
+        if spatial_a:
+            try:
+                nx_pgnet.write(conn).pgnet(GAWrite,net_name,srid_a,overwrite=True,
+                    directed=False,multigraph=False)
+            except:
+                #if nx_pgnet.Error():
+                print "Error caused by no nodes being left in the network 'a'"
+        else:
+            nx_pgnet.write(conn).pgnet(GAWrite,net_name,-1,overwrite=True,
+                node_equality_key='id_')
 
     if save_b:    
         #write network B
         if i == -99: return  
         GBWrite = GtempB.copy()
-        nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),27700,overwrite=True)
-        #nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),-1,overwrite=True,node_equality_key='id_')
-        if failure['dependency']:
-            #convert to use exisitng connection rather than the once created by psycopg2
-            #allSQL='SELECT * FROM "Inter_Lines"'
-            #for row in conn.ExecuteSQL(allSQL):a_to_b_edges.append([row.p,row.t])
-            #sql to create a table in the db for this time step
-            import psycopg2
-            con = psycopg2.connect(database=conn2['dbname'],user=conn2['user'],password=conn2['password'],port=conn2['port'])
-            cur = con.cursor()
+        if spatial_b:
+            try:
+                nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),srid_b,
+                   overwrite=True)
+            except:
+                #if nx_pgnet.Error():
+                print "Error caused by no nodes being left in the network 'b'"
+        else:
+            nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),-1,
+                   overwrite=True,node_equality_key='id_')
+        if failure['dependency']: #dependency edge table
             table_name_old = 'inter_edges_at_t'
-            table_name_new = 'Inter_edges_at_t_%s'%(i)
-            cur.execute("DROP TABLE IF EXISTS %s" %(table_name_old))
-            cur.execute("CREATE TABLE %s (id INT PRIMARY KEY, netA_node INT, netB_node INT)" %(table_name_old))
-            con.commit()
-            
+            table_name_new = 'inter_edges_at_t_%s'%(i)
+            conn.ExecuteSQL("DROP TABLE IF EXISTS %s" %(table_name_old))
+            conn.ExecuteSQL("CREATE TABLE %s (id INT PRIMARY KEY, netA_node INT, netB_node INT)" %(table_name_old)) 
             k = 0
             for edge in a_to_b_edges:
-                 cur.execute("""INSERT INTO inter_edges_at_t VALUES (%s,%s,%s)""",
-                    (k,edge[0],edge[1]))
+                 conn.ExecuteSQL("INSERT INTO inter_edges_at_t VALUES (%s,%s,%s)" %(k,edge[0],edge[1]))
                  k += 1
             
-            con.commit()
-            rename_db_table(conn2,table_name_old,table_name_new)
+            rename_db_table(conn,table_name_old,table_name_new)
             
         elif failure['interdependency']:
             #write interdependency
             pass
     return
 
-def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameters):
-    conn, conn2, net_name_a, net_name_b, save_a, save_b = db_parameters
+def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameters,k):
+    '''
+    At each time step writes the metrics calculated to a table in the database.
+    If i=0 creates the table as well. At the end, renames the table.
+    '''
+    import ogr
+    conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     defaultA = 'network_a'; defaultB = 'network_b'
-    
+    print 'Writing results table(s)'
+    conn = ogr.Open(conn)
     if i == 0: 
-        create_db_res_table(conn2,defaultA,optionA)
-        if not STAND_ALONE: create_db_res_table(conn2,defaultB,optionB)
-    if i <> -99:
-        import psycopg2
-        con = psycopg2.connect(database=conn2['dbname'],user=conn2['user'],password=conn2['password'],port=conn2['port'])
-        cur = con.cursor()
+        create_db_res_table(conn,defaultA,optionA)
+        if not STAND_ALONE: create_db_res_table(conn,defaultB,optionB)
+    if i <> -100:
         #-----------------write basic metrics out------------------------------
         #can't figure out how to have dynamic name variable and allow text to be written out to table as well
-        cur.execute("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s,%s)""",
-                    (i,basicA['no_of_nodes'][i],basicA['number_of_edges'][i],
-                     basicA['number_of_components'][i],basicA['no_of_isolated_nodes'][i],basicA['nodes_removed'][i]))
-        con.commit()
+        conn.ExecuteSQL("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s)""" 
+                %(i,basicA['no_of_nodes'][i],basicA['number_of_edges'][i],
+                  basicA['number_of_components'][i],basicA['no_of_isolated_nodes'][i]))
+        if basicA['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_removed='{}' WHERE time_step=%s""" %(i))        
+        else:            
+            if len(basicA['nodes_removed'][i])==1:conn.ExecuteSQL("""UPDATE network_a SET nodes_removed=ARRAY %s WHERE time_step=%s""" %(str(basicA['nodes_removed'][i]),i))
+            else:conn.ExecuteSQL("""UPDATE network_a SET nodes_removed=ARRAY%s WHERE time_step=%s""" %(basicA['nodes_removed'][i],i))
+        if basicA['nodes_selected_to_fail'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail='{}' WHERE time_step=%s""" %(i))        
+        else:            
+            if len(basicA['nodes_selected_to_fail'][i])==1:conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail=ARRAY %s WHERE time_step=%s""" %(str(basicA['nodes_selected_to_fail'][i]),i))
+            else:conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail=%s WHERE time_step=%s""" %(basicA['nodes_selected_to_fail'][i],i))
+
         #-----------------write option metrics out-----------------------------
         for keys in optionA:
             if optionA[keys]<>False and optionA[keys]<>True:
-                if keys=='isolated_nodes_removed':
-                    cur.execute("""UPDATE network_a SET isolated_nodes_removed='None' WHERE time_step=%s""" %(i))
-                elif keys=='isolated_nodes':
-                    cur.execute("""UPDATE network_a SET isolated_nodes='None' WHERE time_step=%s""" %(i))
-                elif keys=='subnodes':
-                    cur.execute("""UPDATE network_a SET subnodes='None' WHERE time_step=%s""" %(i))
-                elif optionA[keys][i]==None:
-                    cur.execute("""UPDATE network_a SET %s='None' WHERE time_step=%s"""%(keys,i))
-                else:
-                    cur.execute("""UPDATE network_a SET %s=%s WHERE time_step=%s""" %(keys,optionA[keys][i],i))
-            con.commit()
-
+                try:
+                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes':
+                        if optionA[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))        
+                        else:
+                            if len(optionA[keys][i])==1:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionA[keys][i]),i))
+                            else:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,optionA[keys][i],i))
+                    elif optionA[keys][i]==[] or optionA[keys][i]==[[]]:
+                        conn.ExecuteSQL("""UPDATE network_a SET %s='[]' WHERE time_step=%s""" %(keys,i))
+                    elif optionA[keys][i]==None: conn.ExecuteSQL("""UPDATE network_a SET %s='ERROR' WHERE time_step=%s"""%(keys,i))
+                    else: conn.ExecuteSQL("""UPDATE network_a SET %s=%s WHERE time_step=%s""" %(keys,optionA[keys][i],i))
+                except:
+                    if keys=='subnodes':
+                        subnd=[]
+                        for item in optionA[keys][i]:
+                            for nd in item: subnd.append(nd)
+                        conn.ExecuteSQL("""UPDATE network_a SET %s= ARRAY %s WHERE time_step=%s""" %(keys,subnd,i))
+                    else:
+                        conn.ExecuteSQL("""UPDATE network_a SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
+                        print "Error occured when writing values to database for network 'a' where the key is '%s'" %(keys)
         if not STAND_ALONE:
             #if dependency or interdependency
             #---------------write basic metrics out----------------------------
-            cur.execute("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s,%s)""", 
-                    (i,basicB['no_of_nodes'][i],basicB['number_of_edges'][i],
-                     basicB['number_of_components'][i],basicB['no_of_isolated_nodes'][i],basicB['nodes_removed'][i]))
-            con.commit()
-            
+            conn.ExecuteSQL("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s)""" 
+                %(i,basicB['no_of_nodes'][i],basicB['number_of_edges'][i],
+                  basicB['number_of_components'][i],basicB['no_of_isolated_nodes'][i]))
+            try:
+                if basicB['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed='{}' WHERE time_step=%s""" %(i))        
+                else: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed= ARRAY %s WHERE time_step=%s""" %(basicB['nodes_removed'][i],i))
+            except:
+                print "Error in basicB 'nodes_removed' when trying to write out results."
+                exit()
+            if basicB['nodes_selected_to_fail'][i]==[]: conn.ExecuteSQL("""UPDATE network_b SET nodes_selected_to_fail='{}' WHERE time_step=%s""" %(i))  
+            else: 
+                if len(basicB['nodes_selected_to_fail'][i])==1:conn.ExecuteSQL("""UPDATE network_b SET nodes_selected_to_fail=ARRAY %s WHERE time_step=%s""" %(str(basicB['nodes_selected_to_fail'][i]),i))
+                else:conn.ExecuteSQL("""UPDATE network_b SET nodes_selected_to_fail=%s WHERE time_step=%s""" %(basicB['nodes_selected_to_fail'][i],i))
+
             #---------------write option metrics out---------------------------
             for keys in optionB:
                 if optionB[keys]<>False and optionB[keys]<>True:
-                    if keys=='isolated_nodes_removed':
-                        cur.execute("""UPDATE network_b SET isolated_nodes_removed='None' WHERE time_step=%s""" %(i))
-                    elif keys=='isolated_nodes':
-                        cur.execute("""UPDATE network_b SET isolated_nodes='None' WHERE time_step=%s""" %(i))
-                    elif keys=='subnodes':
-                        cur.execute("""UPDATE network_b SET subnodes='None' WHERE time_step=%s""" %(i))
-                    elif optionB[keys][i]==None:
-                        print 'the key this time is:', keys
-                        cur.execute("""UPDATE network_a SET %s='None' WHERE time_step=%s"""%(keys,i))
-                    else:
-                        cur.execute("""UPDATE network_b SET %s=%s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
-                    con.commit()
-        cur.close();con.close() 
-    else:
+                    try:
+                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='nodes_removed_due_to_dependency_failure':
+                            if optionB[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_b SET %s='{}' WHERE time_step=%s""" %(keys,i))
+                            elif len(optionB[keys][i])==1:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionB[keys][i]),i))
+                            else:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
+                        elif optionB[keys][i]==[] or optionB[keys][i]==[[]]:conn.ExecuteSQL("""UPDATE network_b SET %s='[]' WHERE time_step=%s""" %(keys,i))
+                        elif optionB[keys][i]==None: conn.ExecuteSQL("""UPDATE network_a SET %s='ERROR' WHERE time_step=%s"""%(keys,i))
+                        else: conn.ExecuteSQL("""UPDATE network_b SET %s=%s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
+                    except:
+                        if keys=='subnodes':
+                            subnd=[]
+                            for item in optionB[keys][i]:
+                                for nd in item: subnd.append(nd)
+                            conn.ExecuteSQL("""UPDATE network_b SET %s= ARRAY %s WHERE time_step=%s""" %(keys,subnd,i))
+                        else:
+                            conn.ExecuteSQL("""UPDATE network_b SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
+                            print "Error occured when writing values to database for network 'b' where the key is '%s'. i is %s - length of list is %s" %(keys,i,len(optionB[keys]))
+                            
+    if k==-99:
         #if last iteration rename tabkes to something more specific
-        rename_db_table(conn2,defaultA,table_name_new='results_'+net_name_a)
+        print 'Renaming results tables'
+        rename_db_table(conn,defaultA,table_name_new='results_'+net_name_a)
         if not STAND_ALONE:
-            rename_db_table(conn2,defaultB,table_name_new='results_'+net_name_b)
+            rename_db_table(conn,defaultB,table_name_new='results_'+net_name_b)
     return
 
-def create_db_res_table(con,table_name,option):
-    import psycopg2
-    con = psycopg2.connect(database=con['dbname'],user=con['user'],password=con['password'],port=con['port'])
-    cur = con.cursor()
-    cur.execute("DROP TABLE IF EXISTS %s" %(table_name))
-    cur.execute("CREATE TABLE %s (time_step INT PRIMARY KEY, No_of_Nodes INT, No_of_Edges INT, No_of_Comp INT, No_of_Isolated_Nodes INT, nodes_removed varchar)" %(table_name))
-    con.commit()
+def create_db_res_table(conn,table_name,option):
+    '''
+    '''
+    conn.ExecuteSQL("DROP TABLE IF EXISTS %s" %(table_name))
+    conn.ExecuteSQL("CREATE TABLE %s (time_step INT PRIMARY KEY, no_of_nodes INT, no_of_edges INT, no_of_comp INT, no_of_isolated_nodes INT, nodes_removed INT ARRAY, nodes_selected_to_fail INT ARRAY)" %(table_name))
     for keys in option:
-        cur.execute("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
-    con.commit()
-    cur.close();con.close()
+        if option[keys]==False: pass
+        elif option[keys]=='subnodes':conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s INT ARRAY" %(table_name,keys))
+        else:conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
     return
 
-def rename_db_table(con,table_name_old,table_name_new):
-    import psycopg2
-    con = psycopg2.connect(database=con['dbname'],user=con['user'],password=con['password'],port=con['port'])
-    cur = con.cursor()
-    cur.execute("DROP TABLE IF EXISTS %s;" %(table_name_new))
-    cur.execute("ALTER TABLE %s RENAME TO %s;" %(table_name_old,table_name_new))
-    con.commit();cur.close();con.close()
+def rename_db_table(conn,table_name_old,table_name_new):
+    '''
+    '''
+    conn.ExecuteSQL("DROP TABLE IF EXISTS %s;" %(table_name_new))
+    conn.ExecuteSQL("ALTER TABLE %s RENAME TO %s;" %(table_name_old,table_name_new))
     return
 
 def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiterations=False):
