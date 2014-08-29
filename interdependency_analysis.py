@@ -48,11 +48,12 @@ import sys, random
 import networkx as nx
 
 #custom modules
-sys.path.append("C:/Users/Craig/Dropbox/resilience_module/resilience_modules")
-sys.path.append("C:/a8243587_DATA/Dropbox/resilience_module/resilience_modules")
+#sys.path.append("C:/Users/Craig/Dropbox/resilience_module/resilience_modules")
+#sys.path.append("C:/a8243587_DATA/Dropbox/resilience_module/resilience_modules")
+sys.path.append("C:/a8243587_DATA/resilience_module/resilience_modules")
 import tools, error_classes, failure_methods
 import network_handling_v1_4_1 as network_handling
-import outputs_v1_4_0 as outputs
+import outputs_v1_4_1 as outputs
 
 
 def main(GA, GB, parameters, logfilepath, viewfailure=False):
@@ -199,7 +200,6 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     elif failure['dependency'] and failure['stand_alone']==False and failure['interdependency']==False:
         '''
         '''
-        print 'DEPENDENCY FAILURE MODEL'
         #special one for cascading as loop needed to handle multiple network A nodes being removed in one iteration
         #to store all nodes for intire iteration which are removed from networkB due to broken dependence link
         temp = []
@@ -326,7 +326,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                         temp2.append(temp[count])
                         no_of_subnodes+=(len(temp[count]))
                         count+=1
-                    option_metrics['subnodes'].append(temp2)
+                    #print'#####'
+                    #print temp2
+                    #option_metrics['subnodes'].append(temp2)
+                    option_metrics['subnodes'].insert(i,temp2)
+                    #print option_metrics['subnodes']
+                    #print'#####'
     
                     if option_metrics['no_of_subnodes']<>False:option_metrics['no_of_subnodes'].append(no_of_subnodes)
                 #calcualte the averge path length if needed
@@ -458,7 +463,7 @@ def metrics_initial(GnetA, GnetB, parameters):
     if optionA['avg_nodes_in_components']==True:
         optionA['avg_nodes_in_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(GA)))]
     if optionA['isolated_nodes']==True:
-        optionA['isolated_nodes']=[[nx.isolates(GA)]]
+        optionA['isolated_nodes']=[nx.isolates(GA)]
     if handling_variables['remove_isolates'] == True or optionA['isolated_nodes_removed'] == True:
         optionA['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step
     if handling_variables['remove_isolates'] == True or optionA['no_of_isolated_nodes_removed'] == True:
@@ -499,7 +504,7 @@ def metrics_initial(GnetA, GnetB, parameters):
         if optionB['avg_nodes_in_components']==True: 
             optionB['avg_nodes_in_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
         if optionB['isolated_nodes']==True:
-            optionB['isolated_nodes']=[[nx.isolates(GB)]]
+            optionB['isolated_nodes']=[nx.isolates(GB)]
         if handling_variables['remove_isolates']==True or optionB['isolated_nodes_removed']==True:
             optionB['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step    
         if handling_variables['remove_isolates']== True or optionB['no_of_isolated_nodes_removed']==True:
