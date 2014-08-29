@@ -3,6 +3,12 @@
 Created on Sat Mar 22 12:11:59 2014
 
 @author: a8243587
+
+v1_4_0 - works with ia_v5_4_1,outputs_v_1_4_0,run_inter_analsyis_v1_4_1
+
+v1_4_0 - works with ia_v5_4_2,outputs_v1_4_1,run_inter_analsyis_v1_4_1
+Differences - 
+
 """
 
 #standard libraries
@@ -11,35 +17,6 @@ import networkx as nx
 #specific modules
 import error_classes
 
-
-def remove_edges(G,nde,INTERDEPENDENCY):
-    '''Removes the edges from the input network where they involve the input 
-    node.
-    Input: network, the node removed, INTERDEPENDENCY variable
-    Return: network '''
-    #if perforing single of dependency analysis
-    if INTERDEPENDENCY == False:    
-        i = 0
-        edgelist = G.edges()
-        #loop throught he edge list, and if an edge using the removed node is found, remove it
-        while i < len(edgelist):
-            origin,dest = edgelist[i]
-            if origin == nde and origin <> dest:
-                G.remove_edge(origin,dest)
-            if dest == nde and origin <> dest:
-                G.remove_edge(origin,dest)
-            i += 1
-    #if performing interdependcy analysis
-    elif INTERDEPENDENCY == True:
-        #get the edges belonging to the node
-        nde_edges = G.edges(nde)
-        i = 0  
-        #remoce all edge which involve the node
-        while i < len(nde_edges):
-            origin,dest = nde_edges[i] 
-            G.remove_edge(origin,dest)      
-            i += 1
-    return G
 
 def check_node_removed(node, subnodes, isolated_nodes):
     '''Identify if a node has been removed from the network already, or if it is 
@@ -58,8 +35,6 @@ def check_node_removed(node, subnodes, isolated_nodes):
         h += 1
     return REMOVED
               
-
-
 def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edges,net):
     '''Removed any isolated nodes in the given network and any associated 
     edges. Retruns the eddited network and a number of lists which require 
@@ -86,12 +61,8 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
                 k -= 1
             k += 1
         j += 1
-    
+
     #update some of the lists to record the simulation process
-    option['isolated_nodes'].append(isolatednodes)  
-    option['no_of_isolated_nodes_removed'].append(len(isolatednodes))
-    basic['no_of_nodes_removed'].append(basic['no_of_nodes_removed'].pop()+len(isolatednodes))
-    
     
     tot = 0
     if net == 'B':
@@ -110,21 +81,7 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
                             print item[1]
                         exit()
                 v += 1
-    print 'RUNNING REMOVE_ISOLATES FROM',net,'. Number of ISOLATES removed:',len(isolatednodes),'(',isolatednodes,');','Dependency edges removed:', tot
-    '''
-    What this does should be done via check dependency edges - which now happens I think
-    #remove from to and from lists where the dependence link is now invalid as to node removed as isolated
-    v = 0
-    while v < len(isolatednodes):
-        vf = 0
-        while vf < len(to_b_nodes):
-            if isolatednodes[v] == to_b_nodes[vf]:
-                to_b_nodes.pop(vf) #remove from the to list
-                from_a_nodes.pop(vf) #remove from the from list
-                vf -= 1
-            vf += 1
-        v += 1       
-    '''
+    #print 'RUNNING REMOVE_ISOLATES FROM',net,'. Number of ISOLATES removed:',len(isolatednodes),'(',isolatednodes,');','Dependency edges removed:', tot
     return G,node_list,basic,option,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges
     
 def handle_sub_graphs(nodelists, edgelists):
@@ -178,8 +135,7 @@ def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB
     ''' 
     GA, GB, GtempA, GtempB = networks   
     nodes_removed_from_b=[]
-    i=0
-    print 'Nodes in network A being removed:', nodes_to_check
+    #print 'Nodes in network A being removed:', nodes_to_check
     for node in nodes_to_check:
         z = 0
         while z < len(a_to_b_edges):
@@ -196,45 +152,7 @@ def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB
                     z-=1
                 else: raise error_classes.SearchError('Error. Node has already been removed.')
             z += 1                
-              
-        
-    '''
-        while i < len(from_a_nodes): #for the length of a node list
-            if node == from_a_nodes[i]: #if the removed value coresponds to a from node in the interdependency edges
-                tnode = to_b_nodes[i] #get the to node at the other end of the dependency edge                                                     
-                #check node has not been removed through being isolated or member of a subgraph            
-                REMOVED = check_node_removed(tnode, optionB['subnodes'], optionB['isolated_nodes']) 
-                #if node still in network
-                if not REMOVED:
-                    #remove all edges which feature the to node
-                    GtempB = remove_edges(GtempB,tnode,INTERDEPENDENCY) 
-                    try:                
-                        GtempB.remove_node(tnode) #remove the to node
-                    except:
-                        raise error_classes.SearchError('Error. Could not find the node in the network.')
-                        error = 0001
-                        return error
-                    #add node to required metrics/counts
-                    nodes_removed.append(tnode)
-                    temp.append(tnode) 
-                    to_b_nodes.pop(i) 
-                    from_a_nodes.pop(i)
-                    a_to_b_edges.pop(i)
-                    #edit i so no list items are mised 
-                    i -= 1  
-                elif REMOVED: 
-                    #if node has already been removed in another process
-                    raise error_classes.SearchError('Error. Node has already been removed.')
-            else:
-                #no dependent nodes
-                pass
-            i += 1
-    '''
-    #if k==False: print 'node removed has no dependency edges:', node
-    
-    basicB['no_of_nodes_removed'].append(len(nodes_removed_from_b))  
-    basicB['nodes_removed'].append(nodes_removed_from_b)
-    optionB['no_of_inter_removed'].append(len(nodes_removed_from_b))
+                 
     networks =  GA, GB, GtempA, GtempB
     args = networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges
     return args
