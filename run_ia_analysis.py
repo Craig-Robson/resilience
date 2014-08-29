@@ -3,8 +3,17 @@
 Created on Wed Apr 02 08:23:20 2014
 
 @author: a8243587
-"""
 
+********
+Version 2_4_0 - replaces the lists of metrics with dicts - integrates with 
+v5_4_0 of main resilince module.
+
+Last good version - run_ia_analysis
+********
+
+
+
+"""
 #import python modules
 import networkx as nx
 import ogr, sys
