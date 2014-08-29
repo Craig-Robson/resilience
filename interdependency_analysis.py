@@ -27,17 +27,6 @@ For the developer:
     Finally the results module is called and the results printed and wrote to file
         File path defined at top of code
         
-
-5_1_5+:
-to make the failure models easier to run with external data as a stand alone script
-
-5_1_7+:
-changes to make the metric selection policy more user friendly and flexable
-        
-5_2_??:
-changes again to make the metric selection even more user firendly after the failure of the 5_1_ methods
-
-
 '''
 
 __author__ = "Craig Robson"
@@ -49,7 +38,6 @@ __version__ = "1.0"
 import sys
 import networkx as nx
 import random as r
-import time
 import datetime
 
 sys.path.append('C:/a8243587_DATA/GitRepo/nx_pgnet');
@@ -71,29 +59,120 @@ length = 'shape_leng'
 '''Advanced options'''
 #NO_ISOLATES = False
 
+class GeneralError(Exception):
+    '''Non-descript error.'''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
 
+class GraphError(Exception):
+    '''Error relating to a network not be suitable to compute or run the 
+    selected function on.'''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
+
+class OutputError(Exception):
+    ''''''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
+  
+class CalculationError(Exception):
+    '''Could not calculate a value.'''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
+
+class SearchError(Exception):
+    '''Could not find the node or edge inteneded to be found.'''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
+  
+class WriteError(Exception):
+    '''Could not open and read or could not write to the text file.'''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
+  
+def default_parameters(fileName, failure_1 = None, failure_2 = None, failure_3 = None, basic_A = None, option_A = None, basic_B = None, option_B = None):
+    #metrics
+    
+    if basic_A <> None:
+        pass
+    else:
+        nodes_removed_A = True #nodes removed from network A
+        node_count_removed_A = True #count of ndoes removed from network A   
+        count_nodes_left_A = True #the number of nodes left in network A
+        number_of_edges_A = True #number of edges in the network
+        number_of_components_A = True #number of subgraphs/isolated nodes
+        basic_A = nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A
+    if option_A <> None:
+        pass
+    else:
+        size_of_components_A=False;giant_component_size_A=False;av_nodes_in_components_A=False;isolated_nodes_A=False;isolated_n_count_A=True;isolated_n_count_removed_A=False;subnodes_A=False;subnodes_count_A=False;path_length_A=False;av_path_length_components_A=False;giant_component_av_path_length_A=False;av_path_length_geo_A=False;average_degree_A=False;inter_removed_count_A=False
+        option_A = size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A
+    if basic_B <> None:
+        pass
+    else:
+        basic_B = None
+    if option_B <> None:
+        pass
+    else:
+        option_B = None
+    
+    metrics = basic_A,basic_B,option_A,option_B
+
+    if failure_1 <> None:
+        STAND_ALONE,DEPENDENCY,INTERDEPENDENCY = failure_1
+    else:
+        STAND_ALONE = True;DEPENDENCY = False;INTERDEPENDENCY = False
+    if failure_2 <> None:
+        SINGLE,SEQUENTIAL,CASCADING = failure_2
+    else:
+        SINGLE = False;SEQUENTIAL = True;CASCADING = False
+    if failure_3 <> None:
+        RANDOM,DEGREE,BETWEENNESS = failure_3
+    else:   
+        RANDOM=True;DEGREE = False;BETWEENNESS = False
+        
+    REMOVE_SUBGRAPHS = False
+    REMOVE_ISOLATES = False
+    NO_ISOLATES = False
+    a_to_b_edges = None
+    parameters=metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName, a_to_b_edges
+    return parameters
+
+    
+  
 def write_to_log_file(logfilepath,text):
     '''Writes to a file given a file path and a string of text. Also adds the 
     time to the output. Opens and closes the file to avoid the file being 
     locked during complex iteractions.
     Input: logfilepath, string of text
     Return: Nothing  '''
-    print 'log file path is: ', logfilepath
     #if a logfile is being used and the filepath has been specified
-    if logfilepath <> False or logfilepath <> None:
+    if logfilepath == False or logfilepath == None:
+        pass
+    else:
         try:
             #open the logfile, print the time and the string sent
             logfile = open(logfilepath,'a')
             logfile.write(str(datetime.time) + ',\t' + str(text))
             logfile.close()
         except:
-            #if the logfile could not be opened, exit
-            print 'COULD NOT WRITE TO LOG FILE'
-            print logfilepath
-            print text
-            exit()
-    
-def max_val_random(alist):
+            #if the logfile could not be opened
+            raise WriteError('Write Error. Could not write to log file.')
+            
+        
+def max_val_random(value_list):
     '''Find the maximum value in a list, and if tied between two or more 
     values, randomly select one of the ties values. In the special case of 
     betweenness centrality being used, all entires may be zero as they as 
@@ -104,43 +183,37 @@ def max_val_random(alist):
     ma = -99999 #will store the maximum value
     node = -99999 #will store the node (number) with the maximum value
     tie_list = [] #use to store any nodes which shre the maximum value
-    i = 0
+    node_iterator = 0 #counts how many node have been selected
+    list_iterator = 0 
+
     #loop through the whole list
-    while i<len(alist):
+    while node_iterator < len(value_list):
             try:
-                if alist[i] == 0:
-                    #if there is a value of zero, ignore it
-                    pass
-                elif alist[i] > ma:
+                if value_list[list_iterator] > ma:
                     #if the value is higher than the max value already
                     #reset the tie list
                     tie_list = []
                     #add the value to the tie_list in case another one with the same value is found
-                    tie_list.append(i)
-                    ma = alist[i]
-                    node = i
-                elif alist[i] == ma:
+                    tie_list.append(list_iterator)
+                    ma = value_list[list_iterator]
+                    node = list_iterator
+                elif value_list[list_iterator] == ma:
                     #if the value is the same as the current max value, add to the tie list
-                    tie_list.append(i)
+                    tie_list.append(list_iterator)
                 else:
                     pass
+                node_iterator += 1
             except:
+                #pass as no node with this value
                 pass
-            i += 1
+            list_iterator += 1
+            
     #if there is more than one node in the tie list, pick one at random            
-    if len(tie_list)>0:
+    if len(tie_list) > 0:
         node = r.choice(tie_list)
         return ma, node
-    #this should really eb idne in the betweenness function
-    else: 
-        #list can be zero if using betweenness as nodes can be in pairs, thus non have a betweenness value
-        #therefore, as graph stil has active components, still have to remove a node
-        #thus pick one at random to remove
-        templist=[]
-        for node in alist:
-            templist.append(node)
-        node = r.choice(templist)
-        return ma, node 
+    else:
+        raise GeneralError('Error. No node was found with a value greater than -99999.')
         
 '''sequential failures'''
 def sequential_degree(G,INTERDEPENDENCY): #formally cascading
@@ -154,10 +227,10 @@ def sequential_degree(G,INTERDEPENDENCY): #formally cascading
     if node == -99999:
         #check to see if the number of edges in the network is greater than 0
         if G.number_of_edges() > 0: 
-            print 'There are', G.number_of_edges(), 'edge on the network. An unknown error has occred.'
-        else: print 'There are no edges in the network, thus no values could be computed.'
-        exit()
-    else: #graph still connected
+            raise GeneralError('There are %s edge on the network. An unknown error has occred.' %(G.number_of_edges()))
+        else:  
+            raise CalculationError('There are no edges in the network, thus no values could be computed.')
+    else: 
         #remove the edges realted to the node - networkx does this automatically when you remove the node I think
         G = remove_edges(G,node,INTERDEPENDENCY) 
         #remove the node from the network
@@ -171,11 +244,11 @@ def sequential_betweenness(G,INTERDEPENDENCY):
     Input: a network, INTERDEPENDENCY variable
     Return: a network, the node removed'''
     #find the node with the max betweenness value in the network
-    degree, node = max_val_random(nx.betweenness_centrality(G)) 
+    betweenness_value, node = max_val_random(nx.betweenness_centrality(G))
+    
     #if the node has the value of an error
     if node == -99999:
-        print 'An error occured when calcualting the node to remove.'
-        exit()
+        raise GeneralError('Error. An error occured when calcualting the node to remove.')
     else:
         #remove all edges which feature the node and then the node
         G = remove_edges(G, node,INTERDEPENDENCY) 
@@ -262,9 +335,8 @@ def single_random(G,node_list, INTERDEPENDENCY):
     Input: network, list of nodes, INTERDEPENDENCY variable
     Return: network, node removed '''
     #if there are no nodes in the network
-    if len(node_list)< 1:
-        print 'MAJOR ERROR. TERMINATING. NO NODES TO CHOOSE FROM FOR SINGLE_RANDOM PROCESS.'
-        exit()
+    if len(node_list) < 1:
+        raise GraphError('Error. No nodes to choose from for the node to remove.')
     #choose a node at random from the graph node list
     node = r.choice(node_list) 
     #use Gtemp as need to reset G to its original state for the next iteration
@@ -286,14 +358,13 @@ def handle_isolates(G): #remove isolated nodes
     isolatednodes = nx.isolates(G)
     #if there are no edges in the network, then all nodes are isolates
     if G.number_of_edges() == 0: 
-        print 'Graph dissconnected, there are no edges and the number of nodes in the graph is ', G.number_of_nodes(), '(handle_isolated function).'
-        exit()
+        raise GraphError('Error. The network is dissconnected, there are no edges left in the network.')
     else:
         #remove all nodes which are in the isolated list
         G.remove_nodes_from(isolatednodes) 
     return G,isolatednodes
         
-def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_nodes,from_nodes):
+def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes):
     '''Removed any isolated nodes in the given network and any associated 
     edges. Retruns the eddited network and a number of lists which require 
     updating due to the removal.
@@ -309,9 +380,9 @@ def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node
         while k < len(node_list):
             if isolatednodes[j] == node_list[k]:
                 node_list.remove(node_list[k])
-                k-=1
-            k+=1
-        j+=1
+                k -= 1
+            k += 1
+        j += 1
     
     #update some of the lists to record the simulation process
     isolated_nodes.append(isolatednodes)  
@@ -320,17 +391,17 @@ def remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node
     
     #remove from to and from lists where the dependence link is now invalid as to node removed as isolated
     v = 0
-    while v<len(isolatednodes):
+    while v < len(isolatednodes):
         vf = 0
-        while vf<len(to_nodes):
-            if isolatednodes[v]==to_nodes[vf]:
+        while vf < len(to_b_nodes):
+            if isolatednodes[v] == to_b_nodes[vf]:
                 to_b_nodes.pop(vf) #remove from the to list
                 from_a_nodes.pop(vf) #remove from the from list
                 vf -= 1
             vf += 1
         v += 1       
              
-    return Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_nodes,from_nodes
+    return Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes
 
 def remove_edges(G,nde,INTERDEPENDENCY):
     '''Removes the edges from the input network where they involve the input 
@@ -362,8 +433,9 @@ def remove_edges(G,nde,INTERDEPENDENCY):
     return G
  
 def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
-        '''Clean the node lists which are needed for some forms of analyiss of 
-        any nodes which have been removed from the network already.
+        '''Clean the node lists which are needed for some forms of analysis. 
+        Need to remove any nodes which have been removed from the network 
+        already e.g. remove subgraphs. Called from analysis B only.
         Input: 
         Output:  '''
         j = 0
@@ -383,17 +455,20 @@ def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
             vd = 0
             while vd < len(subn[v]): #double set of brackets for the subnodes, so double loop required
                 vf = 0
-                while vf < len(to_nodes):
+                while vf < len(to_b_nodes):
                     if subn[v][vd] == to_b_nodes[vf]:
                         to_b_nodes.pop(vf) #remove from the to list
                         from_a_nodes.pop(vf) #remove from the from list
                         vf-=1 #adjust vf so no value in list is missed
                     vf += 1
                 vd += 1
-            v += 1 
+            v += 1
+        return node_list, to_b_nodes, from_a_nodes
 
 def handle_sub_graphs(nodelists, edgelists):
-    'Used for removing subgraphs from a network, but converting them to node and edge lists so can be re-built for analysis purposes.'
+    ''''Used for removing subgraphs from a network, but converting them to 
+    node and edge lists so can be re-built for analysis purposes. Called from 
+    analysis_B'''
     #build network from node and edge lists,identify any new subgraphs, and store all graphs as node and edge lists
     G = nx.Graph()
     G.add_nodes_from(nodelists)    
@@ -458,31 +533,30 @@ def check_dependency_edges(networks,node,basic_metrics_A,basic_metrics_B,option_
     i=0
     while i < len(from_a_nodes): #for the length of a node list
         if node == from_a_nodes[i]: #if the removed value coresponds to a from node in the interdependency edges
-            print 'found node in net A'
             tnode = to_b_nodes[i] #get the to node at the other end of the dependency edge                                                     
-            #print 'node dependent on node ', node, ' is (tnode) ', tnode
-            REMOVED = check_node_removed(tnode, subnodes_B, isolated_nodes_B) #check node has not been removed through being isolated or member of a subgraph
-            if REMOVED == False: #if node still in network
-                print 'node still in B - ', tnode, ' - ', GtempB.nodes()
-                GtempB = remove_edges(GtempB,tnode,INTERDEPENDENCY) #remove all edges which feature the to node
+            #check node has not been removed through being isolated or member of a subgraph            
+            REMOVED = check_node_removed(tnode, subnodes_B, isolated_nodes_B) 
+            #if node still in network
+            if REMOVED == False:
+                #remove all edges which feature the to node
+                GtempB = remove_edges(GtempB,tnode,INTERDEPENDENCY) 
                 try:                
                     GtempB.remove_node(tnode) #remove the to node
                 except:
-                    print 'MAJOR ERROR - NODE COULD NOT BE REMOVED/DOES NOT EXIST'
+                    raise SearchError('Error. Could not find the node in the network.')
                     error = 0001
                     return error
-                print 'node removed from B'
-                node_count_removed_B.append(node_count_removed_B.pop()+1) #add to the total count of nodes removed               
-                inter_removed_count_B.append(inter_removed_count_B.pop()+1) #add to the count of nodes removed through interdependency
-                temp.append(tnode) #add removed node to the temp list to be added to be main list at the end of iteration process
-                to_b_nodes.pop(i) #remove node from the to list
-                from_a_nodes.pop(i) #remove node from the from list
-                i-=1 #edit i so no list items are mised  
-                #print 'Interdependency analysis, node found in graph and removed successfully.'
-            elif REMOVED == True: #if node has already been removed in another process - not sure this is still needed
-                print 'REMOVED was true, see above for reason'
-            else:
-                print 'Node has already been removed. Should never see this!!!!' #means the ndoe is missing - been removed and not recorded why
+                #add node to required metrics/counts
+                node_count_removed_B.append(node_count_removed_B.pop()+1)             
+                inter_removed_count_B.append(inter_removed_count_B.pop()+1)
+                temp.append(tnode) 
+                to_b_nodes.pop(i) 
+                from_a_nodes.pop(i) 
+                #edit i so no list items are mised 
+                i -= 1  
+            elif REMOVED == True: 
+                #if node has already been removed in another process
+                raise SearchError('Error. Node has already been removed.')
         i += 1
     networks =  GA, GB, GtempA, GtempB
     basic_metrics_A = nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A
@@ -493,7 +567,9 @@ def check_dependency_edges(networks,node,basic_metrics_A,basic_metrics_B,option_
     return args
 
 def check_node_removed(node, subnodes, isolated_nodes):
-    'Identify if a node has been removed from the network already, or if it is still part of the network.'
+    '''Identify if a node has been removed from the network already, or if it is 
+    still part of the network. Used by cascading failure model and 
+    check_dependency_edges function'''
     #create required variables
     REMOVED = False    
     h = 0
@@ -605,7 +681,7 @@ def calc_initial_values(Gtemp, basic_metrics, option_metrics):
     option_metrics = size_of_components,giant_component_size,av_nodes_in_components,isolated_nodes,isolated_n_count,isolated_n_count_removed,subnodes,subnodes_count,path_length,av_path_length_components,giant_component_av_path_length,av_path_length_geo,average_degree,inter_removed_count
     return basic_metrics, option_metrics
         
-def core_analysis(G, GnetB, parameters):   
+def core_analysis(GnetA, GnetB, parameters):   
     '''Creates all the data containers and packages them all
     up into one varaible which can be used for the analysis.
     Inputs: network A, network B, parameters
@@ -637,8 +713,11 @@ def core_analysis(G, GnetB, parameters):
         
     #----------------sort the networks out-------------------------------------
     #make copies of the networks
-    GA = G.copy()
-    GB = GnetB.copy()
+    GA = GnetA.copy()
+    if GnetB <> None:
+        GB = GnetB.copy()
+    else: 
+        GB = GnetB
       
     i = 0
     #----------------create data containers------------------------------------   
@@ -720,15 +799,14 @@ def core_analysis(G, GnetB, parameters):
     else: basic_metrics_B = None; option_metrics_B = None
     
     #----------------sort initial networks out again---------------------------
-    GtempA = GA.copy() #create a temp version of network to be used for all analysis
+    #create a temp version of network to be used for all analysis
+    GtempA = GA.copy() 
     if GB == None:
         GB = nx.Graph()
-    GtempB = GB.copy() #create a temp version of network to be used for all analysis
+    GtempB = GB.copy()
     
     #generate a node list as need for some simulations    
     node_list = GA.nodes() #for single random analysis only
-    #
-    figureModel = None
     
     #----------------calculate the initial values for network A----------------
     basic_metrics_A, option_metrics_A = calc_initial_values(GtempA,basic_metrics_A, option_metrics_A)
@@ -780,8 +858,7 @@ def step(graphparameters,parameters,iterate,logfilepath):
             elif g.number_of_nodes <> 0:
                 subnodes_A = subnodes_A.append(g.nodes())
             else:
-                print 'Component has zero nodes.'
-                exit()
+                raise GeneralError('Error. Component has zero nodes.')
         #------------on the first time step only-----------------------------
         #need to initaite the failure through remoiving a node to begin with
         if i == 0:
@@ -831,7 +908,6 @@ def step(graphparameters,parameters,iterate,logfilepath):
     if INTERDEPENDENCY == True:
         pass
         #this in case in future we start removing nodes from both networks
-        #nodes_removed_B.append(nodeB)
 
     '''Run the post node removal analysis''' #biggest area which needs updating
     if INTERDEPENDENCY == True and STAND_ALONE == False and DEPENDENCY == False :
@@ -856,7 +932,7 @@ def step(graphparameters,parameters,iterate,logfilepath):
         else:
             args = check_dependency_edges(networks,node,basic_metrics_A,basic_metrics_B,option_metrics_A,option_metrics_B,to_b_nodes,from_a_nodes,temp)
             if args == 0001:
-                print 'ERROR', args, ' Could not find chosen node to remove it'
+                raise SearchError('Error. Could not find chosen node to remove it.')
                 write_to_log_file(logfilepath, 'ERROR %s; Could not find chosen node ro remove (check_dependency_edges).' %(args))
                 error = 0001
                 return error
@@ -885,15 +961,14 @@ def step(graphparameters,parameters,iterate,logfilepath):
         iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basic_metrics_A,option_metrics_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basic_metrics_A,option_metrics_A,to_b_nodes, from_a_nodes) #run the analysis
         i += 1  
     else:
-        print 'TERMINAL ERRROR\nNO ANALYSIS TYPE SELECTED'
-        sys.exit()
+        raise GeneralError('Error. No analysis type has been selected.')
     
     #----------------re-package all data into respective containers------------
     networks = GA, GB, GtempA, GtempB    
     graphparameters = networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics   
     return graphparameters, iterate
     
-def analysis_A(networks, basic_metrcs_A, basic_metrics_B, optional_metrics_A, optional_metrics_B,i,node,to_b_nodes, from_a_nodes,temp,): #perform the analysis of the graph 
+def analysis_A(networks, basic_metrcs_A, basic_metrics_B, optional_metrics_A, optional_metrics_B,i,node,to_b_nodes, from_a_nodes,temp): #perform the analysis of the graph 
         '''The analysis function is for the network which is dependent on 
         another, thus some extra checks after to be run'''        
 
@@ -959,10 +1034,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         size_of_components,giant_component_size,av_nodes_in_components,isolated_nodes,isolated_n_count,isolated_n_count_removed,subnodes,subnodes_count,path_length,av_path_length_components,giant_component_av_path_length,av_path_length_geo,average_degree,inter_removed_count= option_metrics
         isolated_n_count.append(len(nx.isolates(Gtemp)))
         #------------check the variables and run appropriate analysis----------
+        #after removing a node, there might be node edges left, need to check before sending to check for isolates
         if REMOVE_ISOLATES == True:
-            Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes = remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes)
+            if Gtemp.number_of_edges() <> 0:            
+                Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes = remove_isolates(Gtemp,node_list,isolated_nodes,isolated_n_count_removed,node_count_removed,to_b_nodes,from_a_nodes)
         elif REMOVE_ISOLATES <> False:
-            sys.exit()
+            raise GeneralError('Error. REMOVE_ISOLATES variable has become corrupt.')
         #------------run some analysis/metric calcs----------------------------
         num_edges = Gtemp.number_of_edges()        
         if num_edges <> 0: #if the graph is not dissconnected                      
@@ -978,7 +1055,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 node_count_removed.append(node_count_removed.pop() + nsubnodes)
                 if subnodes_count <> False: subnodes_count.append(nsubnodes)
                 #clean the node list of nodes removed as part of subgraphs
-                clean_node_lists(subn,node_list,to_b_nodes,from_a_nodes)
+                ode_list, to_b_nodes, from_a_nodes =  clean_node_lists(subn,node_list,to_b_nodes,from_a_nodes)
             #if subgraphs are to be left as part of the network 
             elif REMOVE_SUBGRAPHS == False:
                 #get a list of all connected components
@@ -992,8 +1069,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 if size_of_components <> False: size_of_components.append(temp)   
             else:
                 #there is an error with the variable
-                print 'ERROR! Variable REMOVE_SUBGRAPHS must be set as True or False only.'
-                sys.exit()
+                raise GeneralError('Error. Variable REMOVE_SUBGRAPHS must be set as True or False only.')
                 
         #------------run if no edges left--------------------------------------
         elif num_edges == 0:
@@ -1064,8 +1140,7 @@ def outputresults(graphparameters, parameters,logfilepath=None,multiiterations=N
         basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B, error = average_txtresults(graphparameters, parameters,error)
         #if an error occurs
         if error <> None:
-            print 'Error in calculating the averages for the output.'
-            exit()
+            raise CalculationError('Error. Error in calculating the averages for the output.')
     else:
         #unpack the parameters
         metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges = parameters
@@ -1073,8 +1148,7 @@ def outputresults(graphparameters, parameters,logfilepath=None,multiiterations=N
             #open output file
             outputfile = open(fileName,'a')
         except:
-            print 'Error. Could not open text file to write results to. File attempted was:', fileName,
-            exit()
+            raise WriteError('Error. Could not open text file to write results to. File attempted was: %s' %(fileName))
         #send to the textout function to write the results out
         txtout(outputfile,graphparameters, parameters)
     #pack the metric values together again
@@ -1083,7 +1157,7 @@ def outputresults(graphparameters, parameters,logfilepath=None,multiiterations=N
     
 def average_txtresults(graphparameters, parameters,error):
     '''Reads a txt file with results in and produces an average set and writes 
-    back to the same text file.'''
+    back to the same text file. Appends the averages to the end of the file.'''
     #unpack the graphparameters and parameters
     metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges = parameters
     networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics = graphparameters
@@ -1123,6 +1197,7 @@ def average_txtresults(graphparameters, parameters,error):
             i = 0
             #loop through the list of metric names
             while i < len(line_index):
+                G,dlist,removed_nodes,node
                 #check if the line starts with the meric name in the list at position i
                 if line.startswith(line_index[i]):
                     #if found, split the line
@@ -1130,7 +1205,7 @@ def average_txtresults(graphparameters, parameters,error):
                         a,b = line.split(',[')
                     except:
                         #if can't split the line, there must be an error in the text file
-                        print 'Error. Could not read in the text file for the average results.'
+                        raise CalculationError('Error. Could not read the values in the results file successfuly to calculate the averages.')
                         error = 0045
                         return basic_metrics_A,basic_metrics_B,option_metrics_A,option_metrics_B,error
                     #once split, edit the string to make it readable
@@ -1145,8 +1220,8 @@ def average_txtresults(graphparameters, parameters,error):
                                 temp.append(float(items))
                             except:
                                 #if cant convert to a float, exit.
-                                print 'Error. Could not convert what should be a numerical value to a float when calcautig the average of the results.'
-                                exit()
+                                raise CalculationError('Error. Could not convert what should be a numerical value to a float when calcautig the average of the results.')
+
                     #if more than one value read
                     if len(temp) <> 0:
                         #find out for which network the result is for and append to the respective list
@@ -1156,8 +1231,7 @@ def average_txtresults(graphparameters, parameters,error):
                             dependency = True
                             temp_metrics_B[i].append(temp)
                         else:
-                            print 'Error. The network the values are assoicated with was not found when calcualting the averages for the output.'
-                            exit()
+                            raise OutputError('Error. The network the values are assoicated with was not found when calcualting the averages for the output.')
                     #stop looping through once found the metric and move on
                     break
                 i += 1
@@ -1174,14 +1248,12 @@ def average_txtresults(graphparameters, parameters,error):
         elif r == 1: 
             temp_metrics = temp_metrics_B
         else: 
-            print 'Error. Major error in average results.'
-            exit()
+            raise OutputError('Error. Major error in average results.')
         
         #go through each of the metrics in the list
         metriclist = []
         while y < len(temp_metrics):
             temp_metric = temp_metrics[y]
-            #calc average for each of metrics
             #find the length of the longest list for the metric
             if len(temp_metric) <> 0:
                 max_len = 0                
@@ -1319,9 +1391,6 @@ def write_text_file(outputfile,CASCADING,basic_metrics,option_metrics):
         outputfile.write('\naverage path length of giant component,' + str(giant_component_av_path_length))
     if average_degree <> False:
         outputfile.write('\naverage degree,' + str(average_degree))
-    #if cascding failure write the node removed
-    if CASCADING == True:
-        outputfile.write('\nnodes removed A,' + str(replace_all(str(nodes_removed_A), {',':';','];':'],'})))
     
 def txtout(outputfile,graphparameters, parameters):        
     '''Writes the results to a specified text file.
@@ -1373,7 +1442,7 @@ def replace_all(text, dic):
 '''main control function''' 
 '''connect to database and create networkx graph'''
 '''set the analysis type and initaite that'''
-def main(GA,GB,parameters,logfilepath,viewfailure = False):
+def main(GA,GB,parameters,logfilepath,viewfailure=False):
     '''This is the main control function when the analysis is run directly from 
     the script. This reads in the data provided and processes it as such to run 
     the desired analysis.
@@ -1402,8 +1471,7 @@ def main(GA,GB,parameters,logfilepath,viewfailure = False):
             write_to_log_file(logfilepath,'step completed')
         if iterate == False:
             #no edges left so output results
-            outputresults(graphparameters, parameters,logfilepath)            
-            return
+            outputresults(graphparameters, parameters,logfilepath)
     complete = True
     #update log file - only works if file path is set
     write_to_log_file(logfilepath,'completed analysis')
@@ -1506,30 +1574,33 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
                 iterations += 1
     #if dependency or intersedpendcy
     elif STAND_ALONE == False:
-        #get both networks from csv
-        filepath = str(file_path)+'%s/%s.txt' %(db, NETWORK_NAME[0])
-        nodelist, edgelist = get_nodes_edges_csv(filepath)
-        G1 = nx.Graph()
-        G1.add_nodes_from(nodelist)
-        G1.add_edges_from(edgelist)
-        filepath = str(file_path)+'%s/%s.txt' %(db, NETWORK_NAME[1])
-        nodelist, edgelist = get_nodes_edges_csv(filepath)
-        G2 = nx.Graph()
-        G2.add_nodes_from(nodelist)
-        G2.add_edges_from(edgelist)
+        if use_db == True:
+            conn = ogr.Open(conn)
+            G = nx_pgnet.read(conn).pgnet(nets)
+            raise GeneralError('Error. This function does not work as yet.')
+        elif use_db == False:
+            #get both networks from csv
+            filepath = str(file_path)+'%s/%s.txt' %(db, NETWORK_NAME[0])
+            nodelist, edgelist = get_nodes_edges_csv(filepath)
+            G1 = nx.Graph()
+            G1.add_nodes_from(nodelist)
+            G1.add_edges_from(edgelist)
+            filepath = str(file_path)+'%s/%s.txt' %(db, NETWORK_NAME[1])
+            nodelist, edgelist = get_nodes_edges_csv(filepath)
+            G2 = nx.Graph()
+            G2.add_nodes_from(nodelist)
+            G2.add_edges_from(edgelist)
         main(G1, G2, parameters,logfilepath)
-        pass
     else:
-        print 'STAND ALONE must have a status'
-        sys.exit()
+        raise GeneralError('Error. The STAND_ALONE variable must have a boolean value')
         
 if __name__ == "__main__":
     #------------------type of failure-----------------------------------------
-    STAND_ALONE = False; DEPENDENCY = True; INTERDEPENDENCY = False 
+    STAND_ALONE = True; DEPENDENCY = False; INTERDEPENDENCY = False 
     #------------------method of failure---------------------------------------
     SINGLE = False; SEQUENTIAL = True; CASCADING = False
     #------------------node selection method-----------------------------------
-    RANDOM = True; DEGREE = False; BETWEENNESS = False
+    RANDOM = False; DEGREE = False; BETWEENNESS = True
     #------------------analysis parameters-------------------------------------
     REMOVE_SUBGRAPHS = False; REMOVE_ISOLATES = True; NO_ISOLATES = True
     #REMOVE_SUBGRAPHS: When subgraphs appear, delete from network
@@ -1556,17 +1627,17 @@ if __name__ == "__main__":
     #------------------auto generate text for failure model--------------------
     failuretype = failure_type(SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS)
     #------------------single quick analysis-----------------------------------
-    #GA = nx.gnm_random_graph(50,369)
-    edges = [(1,3),(2,4),(1,2),(1,4),(3,4),(4,5)]
-    GA = nx.Graph()
-    GA.add_edges_from(edges)
+    GA = nx.gnm_random_graph(50,369)
+    #edges = [(1,3),(2,4),(1,2),(1,4),(3,4),(4,5)]
+    #GA = nx.Graph()
+    #GA.add_edges_from(edges)
     
     if STAND_ALONE == True: GB = None
     else: 
-        #GB = nx.gnm_random_graph(34,145)
-        edges = [(1,2),(1,3),(1,4),(2,4),(4,3)]     
-        GB = nx.Graph()
-        GB.add_edges_from(edges)
+        GB = nx.gnm_random_graph(34,145)
+        #edges = [(1,2),(1,3),(1,4),(2,4),(4,3)]     
+        #GB = nx.Graph()
+        #GB.add_edges_from(edges)
     #------------------setting of dependency edges-----------------------------
     if DEPENDENCY == True or INTERDEPENDENCY == True:
         a_to_b_edges = [(3,1),(3,2),(5,3)]
@@ -1657,7 +1728,7 @@ if __name__ == "__main__":
     elif mass == False and STAND_ALONE == True: #for single network analysis
         parameters = metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName1, a_to_b_edges
         complete = main(GA, GB, parameters,logfilepath)
-        print complete
+        print 'complete:', complete
     elif INTERDEPENDENCY == True and mass == False: #for interdependendency analysis
         pass
     elif mass == True and STAND_ALONE == True: #for mass single analysis
