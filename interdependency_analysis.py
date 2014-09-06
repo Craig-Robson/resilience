@@ -6,17 +6,6 @@ Created on Mon Jul 23 14:26:27 2012
 """
 '''
 
-**********
-Version 5_4_0 - integrates the use of dicts rather than lists for the
-storage of the graph metrics.
-
-Version 5_4_1 - parameter dicts rather than lists
-
-Version 5_4_3 - code to remove nodes from a list in order
-
-Last good version - 5_3_3
-**********
-
 Code layout
 
 The mian function is used to define the analysis type and the networks involved in the analysis.
@@ -50,14 +39,9 @@ import sys, random
 import networkx as nx
 
 #custom modules
-#sys.path.append("C:/Users/Craig/Dropbox/resilience_module/resilience_modules")
-#sys.path.append("C:/a8243587_DATA/Dropbox/resilience_module/resilience_modules")
-sys.path.append("C:/a8243587_DATA/resilience_module/resilience_modules")
-import tools
-import error_classes
-import failure_methods_v1_4_0 as failure_methods
-import network_handling_v1_4_1 as network_handling
-import outputs_v1_4_1 as outputs
+sys.path.append("C:/a8243587_DATA/GitRepo/resilience/modules")
+sys.path.append("C:/Users/Craig/GitRepo/resilience/modules")
+import tools,error_classes,failure_methods,network_handling,outputs
 
 
 def main(GA, GB, parameters, logfilepath, viewfailure=False):

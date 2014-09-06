@@ -4,9 +4,6 @@ Created on Sat Mar 22 12:09:21 2014
 
 @author: a8243587
 
-Version V1_4_0 - added failure from_list method
-
-
 """
 
 
@@ -15,9 +12,7 @@ import random
 import networkx as nx
 
 #specific modules
-import error_classes
-import tools
-import network_handling
+import error_classes,tools,network_handling
 
 
 '''sequential failures'''

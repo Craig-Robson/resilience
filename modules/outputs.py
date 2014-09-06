@@ -11,8 +11,7 @@ previuos version - outputs
 """
 
 #custom modules
-import error_classes
-import tools
+import error_classes, tools
 import ogr,sys
 
 def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):

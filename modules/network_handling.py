@@ -4,11 +4,6 @@ Created on Sat Mar 22 12:11:59 2014
 
 @author: a8243587
 
-v1_4_0 - works with ia_v5_4_1,outputs_v_1_4_0,run_inter_analsyis_v1_4_1
-
-v1_4_0 - works with ia_v5_4_2,outputs_v1_4_1,run_inter_analsyis_v1_4_1
-Differences - 
-
 """
 
 #standard libraries

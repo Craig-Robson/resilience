@@ -19,14 +19,15 @@ import networkx as nx
 import ogr, sys
 
 #import resilience module
-import interdependency_analysis_v5_4_0 as ia
+import interdependency_analysis as ia
 
 #import nx_pgnet module
-sys.path.append("C:/a8243587_DATA/Dropbox/GitRepo/nx_pgnet")
+sys.path.append("C:/a8243587_DATA/GitRepo/nx_pgnet")
+sys.path.append("C:/Users/Craig/GitRepo/nx_pgnet")
 import nx_pgnet
 
 #import subsidiary resilience modules
-sys.path.append("C:/a8243587_DATA/Dropbox/resilience_module/resilience_modules")
+sys.path.append("C:/a8243587_DATA/GitRepo/resilience/resilience_modules")
 import tools, error_classes
 
 def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath):
@@ -225,10 +226,10 @@ if STAND_ALONE == False:
     if av_path_length_geo_B <> False: length = 'length'
         
 #------------------compile metrics into variables--------------------------
-basic_metrics_a = {'nodes_removed':nodes_removed_A,'no_of_nodes_removed':node_count_removed_A,
+basic_metrics_A = {'nodes_removed':nodes_removed_A,'no_of_nodes_removed':node_count_removed_A,
                    'no_of_nodes_left':count_nodes_left_A,'number_of_edges':number_of_edges_A,
                    'number_of_components':number_of_components_A}
-option_metrics_a = {'size_of_components':size_of_components_A,'size_of_giant_component':giant_component_size_A,
+option_metrics_A = {'size_of_components':size_of_components_A,'size_of_giant_component':giant_component_size_A,
                     'avg_no_of_nodes_in_components':av_nodes_in_components_A,
                     'isolated_nodes':isolated_nodes_A,'no_of_isolated_nodes':isolated_n_count_A,
                     'no_of_isolated_nodes_removed':isolated_n_count_removed_A,
