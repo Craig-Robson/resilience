@@ -106,7 +106,8 @@ handling_variables = {'remove_subgraphs':False,'remove_isolates':True,'no_isolat
 #------------------setting of data input type------------------------------
 use_db = False
 use_csv = False
-mass = False
+mass = True
+
 if mass == True:
     import network_data_v_0_2 as network_data #does not currently work as no file path for it yet
 
