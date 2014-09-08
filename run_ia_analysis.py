@@ -93,19 +93,9 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
         raise error_classes.GeneralError('Error. The STAND_ALONE variable must have a boolean value')
 
 
-
-#------------------type of failure-----------------------------------------
-STAND_ALONE = True; DEPENDENCY = False; INTERDEPENDENCY = False 
-
-#------------------method of failure---------------------------------------
-SINGLE = False; SEQUENTIAL = True; CASCADING = False
-
-#------------------node selection method-----------------------------------
-RANDOM = False; DEGREE = False; BETWEENNESS = True
-
-failure = {'stand_alone':STAND_ALONE, 'dependency':DEPENDENCY, 'interdependency':INTERDEPENDENCY,
-        'single':SINGLE, 'sequential':SEQUENTIAL, 'cascading':CASCADING,
-        'random':RANDOM, 'degree':DEGREE, 'betweenness':BETWEENNESS}
+failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
+        'single':False, 'sequential':True, 'cascading':False,
+        'random':False, 'degree':False, 'betweenness':True}
 
 #------------------analysis parameters-------------------------------------
 #REMOVE_SUBGRAPHS: When subgraphs appear, delete from network
@@ -121,13 +111,10 @@ if mass == True:
     import network_data_v_0_2 as network_data #does not currently work as no file path for it yet
 
 #------------------use lof file--------------------------------------------
-#logfilepath = False    
-#logfilepath = 'C:/a8243587_DATA/Dropbox/'
 logfilepath = 'C:/a8243587_DATA/logfile.txt'
 
 #------------------path name for the result files--------------------------
 "when using analysing exisiting networks dont need name of outputfile here, just the location"
-#result_file = 'H:/robustness/results/' #for desktop
 result_file = 'C:/a8243587_DATA/Dropbox/result.txt'
 #result_file = 'C:/Users/Craig/Dropbox/robustness/results/' #for laptop
 
@@ -136,9 +123,9 @@ file_path = 'H:/robustness/csv_network_data/'
 #file_path = 'C:/Users/Craig/Dropbox/robustness/csv_network_data/'
 
 #------------------auto generate text for failure model--------------------
-failuretype = tools.failure_type(SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS)
+failuretype = tools.failure_type(failure)
 
-#------------------single quick analysis-----------------------------------
+#--------------for single quick analysis-----------------------------------
 GA = nx.gnm_random_graph(50,369)
 #edges = [(1,3),(2,4),(1,2),(1,4),(3,4),(4,5)]
 #GA = nx.Graph()
@@ -149,15 +136,7 @@ else:
     GB = nx.gnm_random_graph(34,145)
     #edges = [(1,2),(1,3),(1,4),(2,4),(4,3)]     
     #GB = nx.Graph()
-    #GB.add_edges_from(edges)
-
-#------------------setting of dependency edges-----------------------------
-if failure['dependency'] == True or failure['interdependency'] == True:
-    a_to_b_edges = [(3,1),(3,2),(5,3)]
-    if failure['interdependency'] == True:
-        b_to_a_edges = []
-else:
-    a_to_b_edges = None       
+    #GB.add_edges_from(edges)  
 
 #--------------parameters for the database connection----------------------
 host = 'localhost'
@@ -173,10 +152,15 @@ srid_a = 27700; srid_b = 27700;spatial_a=True;spatial_b=True
 save_a = True; save_b = True
 db_parameters = conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b
 
-#---------------------sql for dependency edges-----------------------------
-#interdependency code does not work yet
-#fromSQL='SELECT "p" FROM "Inter_Lines"'
-#toSQL='SELECT "t" FROM "Inter_Lines"'
+#------------------setting of dependency edges-----------------------------
+if failure['dependency'] == True or failure['interdependency'] == True:
+    a_to_b_edges = [(3,1),(3,2),(5,3)]
+    #fromSQL='SELECT "p" FROM "Inter_Lines"
+    #toSQL='SELECT "t" FROM "Inter_Lines"
+    if failure['interdependency'] == True:
+        b_to_a_edges = []
+else:
+    a_to_b_edges = None  
 
 #-----------------------weight field for path length-----------------------
 length = 'shape_leng'
@@ -236,9 +220,7 @@ metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B
 
 #------------------not sure what this is doing-----------------------------
 file_1_name = 'dependencey_test_n1'
-file_2_name = 'dependencey_test_n2'
-
-         
+file_2_name = 'dependencey_test_n2'   
 fileName = 'file location/file name.txt'
 
 #to save the metrics at end of each time step to db
@@ -247,24 +229,20 @@ store_n_e_atts=True
 
 #to save network(s) at each time step to the database
 write_step_to_db = True
+#------------------run some checks-----------------------------------------
+if failure['interdependency']==True: print 'This functionality is not currently available.'; exit()
+if failure['cascading']==True: print 'WARNING! This functionality has not been tested fully yet.'
 
 #------------------analysis methods----------------------------------------
-if failure['dependency'] == True and mass == False and use_csv == True: #for csv only #for dependency analysis
+if use_csv == True:
     parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     NETWORK_NAME = file_1_name, file_2_name #list the name of the two networks for the analysis
     conn = None; noia = 1
     ia.analyse_existing_networks(NETWORK_NAME,conn,dbname,parameters,noia,use_db,use_csv)
-elif failure['dependency'] == True and mass == False:
+elif use_db == True:
     parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     complete = ia.main(GA, GB, parameters,logfilepath)
-    print complete
-elif mass == False and failure['stand_alone'] == True: #for single network analysis
-    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
-    complete = ia.main(GA, GB, parameters,logfilepath)
-    print 'complete:', complete
-elif INTERDEPENDENCY == True and mass == False: #for interdependendency analysis
-    pass
-elif mass == True and STAND_ALONE == True: #for mass single analysis
+elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     print 'where mass = True and Stand_alone = true'
     '''select which network types to analyse'''
     lightrail = False; roads_national = False; roads_regional = False

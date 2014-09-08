@@ -36,17 +36,17 @@ def write_to_log_file(logfilepath,text):
             #if the logfile could not be opened
             raise error_classes.WriteError('Write Error. Could not write to log file.')
 
-def failure_type(SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS):
+def failure_type(failure_dict):
     '''Generates a string describing the analysis being run.
     Input: analysis parameters
     Returns: a single string'''
-    if SINGLE == True: failure = 'Single'
-    elif SEQUENTIAL == True: failure = 'Sequential'
-    elif CASCADING == True: failure = 'Cascading' 
+    if failure_dict['single'] == True: failure = 'Single'
+    elif failure_dict['sequential'] == True: failure = 'Sequential'
+    elif failure_dict['cascading'] == True: failure = 'Cascading' 
     
-    if RANDOM == True: typ = 'Random'
-    elif DEGREE == True: typ = 'Degree'
-    elif BETWEENNESS == True: typ = 'Betweenness'
+    if failure_dict['random'] == True: typ = 'Random'
+    elif failure_dict['degree'] == True: typ = 'Degree'
+    elif failure_dict['betweenness'] == True: typ = 'Betweenness'
     #add togetehr to create a single string
     failuretype = '%s_%s' % (failure, typ)
     return failuretype
