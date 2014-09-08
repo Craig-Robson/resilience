@@ -103,11 +103,15 @@ SINGLE = False; SEQUENTIAL = True; CASCADING = False
 #------------------node selection method-----------------------------------
 RANDOM = False; DEGREE = False; BETWEENNESS = True
 
+failure = {'stand_alone':STAND_ALONE, 'dependency':DEPENDENCY, 'interdependency':INTERDEPENDENCY,
+        'single':SINGLE, 'sequential':SEQUENTIAL, 'cascading':CASCADING,
+        'random':RANDOM, 'degree':DEGREE, 'betweenness':BETWEENNESS}
+
 #------------------analysis parameters-------------------------------------
-REMOVE_SUBGRAPHS = False; REMOVE_ISOLATES = True; NO_ISOLATES = True
 #REMOVE_SUBGRAPHS: When subgraphs appear, delete from network
 #REMOVE_ISOLATES: When isolated nodes appear, delete from network
-#NO_ISOLATES: Allow isolated nodes to be removed in the selection methods    
+#NO_ISOLATES: Allow isolated nodes to be removed in the selection methods
+handling_variables = {'remove_subgraphs':False,'remove_isolates':True,'no_isolates':False}  
 
 #------------------setting of data input type------------------------------
 use_db = False
@@ -140,7 +144,7 @@ GA = nx.gnm_random_graph(50,369)
 #GA = nx.Graph()
 #GA.add_edges_from(edges)
 
-if STAND_ALONE == True: GB = None
+if failure['stand_alone'] == True: GB = None
 else: 
     GB = nx.gnm_random_graph(34,145)
     #edges = [(1,2),(1,3),(1,4),(2,4),(4,3)]     
@@ -148,9 +152,9 @@ else:
     #GB.add_edges_from(edges)
 
 #------------------setting of dependency edges-----------------------------
-if DEPENDENCY == True or INTERDEPENDENCY == True:
+if failure['dependency'] == True or failure['interdependency'] == True:
     a_to_b_edges = [(3,1),(3,2),(5,3)]
-    if INTERDEPENDENCY == True:
+    if failure['interdependency'] == True:
         b_to_a_edges = []
 else:
     a_to_b_edges = None       
@@ -160,12 +164,19 @@ host = 'localhost'
 user = 'postgres'
 password = 'aaSD2011'
 port = '5433'
+dbname = 'testing'
+
+net_name_a = 'power_lines'; net_name_b = 'tube_lines'
+con = {'host':host,'dbname':dbname,'user':user,'password':password,'port':port}
+conn = "PG: host='%s' dbname='%s' user='%s' password='%s' port='%s'" % (host, dbname, user, password, port)
+srid_a = 27700; srid_b = 27700;spatial_a=True;spatial_b=True
+save_a = True; save_b = True
+db_parameters = conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b
 
 #---------------------sql for dependency edges-----------------------------
 #interdependency code does not work yet
 #fromSQL='SELECT "p" FROM "Inter_Lines"'
 #toSQL='SELECT "t" FROM "Inter_Lines"'
-
 
 #-----------------------weight field for path length-----------------------
 length = 'shape_leng'
@@ -177,13 +188,6 @@ count_nodes_left_A = True #the number of nodes left in network A
 number_of_edges_A = True #number of edges in the network
 number_of_components_A = True #number of subgraphs/isolated nodes
   
-if STAND_ALONE == False:      
-      nodes_removed_B = True #nodes removed from network B
-      node_count_removed_B = True #count of ndoes removed from network B   
-      count_nodes_left_B = True #the number of nodes left in network B
-      number_of_edges_B = True #number of edges in the network
-      number_of_components_B = True #number of subgraphs/isolated nodes
-
 #------------------declaration of optional metrics-------------------------
 size_of_components_A = False
 giant_component_size_A = False
@@ -199,69 +203,63 @@ av_path_length_geo_A = False
 giant_component_av_path_length_A = False
 average_degree_A = False
 inter_removed_count_A = False #THIS IS ONLY NEEDED IF INTERDEPENDENCY
-
-if STAND_ALONE == False:        
-    size_of_components_B = False
-    giant_component_size_B = False
-    av_nodes_in_components_B = False
-    isolated_nodes_B = True #THIS NEEDS TO BE IN THE BASIC SET
-    isolated_n_count_B = True #THIS NEEDS TO BE IN THE BASIC SET
-    isolated_n_count_removed_B = False
-    subnodes_B = False
-    subnodes_count_B = False   
-    path_length_B = False
-    av_path_length_components_B = False
-    av_path_length_geo_B = False
-    giant_component_av_path_length_B = False
-    average_degree_B = False
-    inter_removed_count_B = True #THIS IS NEEDED IF NOT STAND ALONE
+density_A = False
 
 #------------------metrics needed for cascading analysis - overrides above
-if CASCADING == True:
+if failure['cascading'] == True:
     pass #for the moment anyway
 
 #------------------option to set the attribute which contins the length of the edges
 if av_path_length_geo_A <> False: length = 'length'
-if STAND_ALONE == False:
-    if av_path_length_geo_B <> False: length = 'length'
+if failure['stand_alone'] == False:
+    if av_path_length_geo_A <> False: length = 'length'
         
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':nodes_removed_A,'no_of_nodes_removed':node_count_removed_A,
                    'no_of_nodes_left':count_nodes_left_A,'number_of_edges':number_of_edges_A,
                    'number_of_components':number_of_components_A}
-option_metrics_A = {'size_of_components':size_of_components_A,'size_of_giant_component':giant_component_size_A,
-                    'avg_no_of_nodes_in_components':av_nodes_in_components_A,
+option_metrics_A = {'size_of_components':size_of_components_A,'giant_component_size':giant_component_size_A,
+                    'avg_nodes_in_components':av_nodes_in_components_A,
                     'isolated_nodes':isolated_nodes_A,'no_of_isolated_nodes':isolated_n_count_A,
                     'no_of_isolated_nodes_removed':isolated_n_count_removed_A,
-                    'subnodes':subnodes_A,'no_of_subnodes':subnodes_count_A,
-                    'avg_path_length':path_length_A,'avg_path_length_of_components':av_path_length_components_A,
-                    'giant_components_avg_path_length':giant_component_av_path_length_A,
-                    'avg_geo_path_length':av_path_length_geo_A,'avg_degree':average_degree_A,
-                    'interdependency_nodes_removed':inter_removed_count_A}
+                    'subnodes':subnodes_A,'subnodes_count':subnodes_count_A,
+                    'path_length':path_length_A,'avg_path_length_of_components':av_path_length_components_A,
+                    'path_length_of_giant_component':giant_component_av_path_length_A,
+                    'path_length_geo':av_path_length_geo_A,'avg_degree':average_degree_A,
+                    'no_of_inter_removed':inter_removed_count_A,'density':density_A}
 
-if STAND_ALONE == False:
-    basic_metrics_B =  nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B
-    option_metrics_B = size_of_components_B,giant_component_size_B,av_nodes_in_components_B,isolated_nodes_B,isolated_n_count_B,isolated_n_count_removed_B,subnodes_B,subnodes_count_B,path_length_B,av_path_length_components_B,giant_component_av_path_length_B,av_path_length_geo_B,average_degree_B,inter_removed_count_B
+if failure['stand_alone'] == False:
+    basic_metrics_B = basic_metrics_A.copy()
+    option_metrics_B = option_metrics_A.copy()
 else: basic_metrics_B = None; option_metrics_B = None
 metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
 
 #------------------not sure what this is doing-----------------------------
 file_1_name = 'dependencey_test_n1'
 file_2_name = 'dependencey_test_n2'
-db = 'testing'
-          
+
+         
+fileName = 'file location/file name.txt'
+
+#to save the metrics at end of each time step to db
+write_results_table=True 
+store_n_e_atts=True
+
+#to save network(s) at each time step to the database
+write_step_to_db = True
+
 #------------------analysis methods----------------------------------------
-if DEPENDENCY == True and mass == False and use_csv == True: #for csv only #for dependency analysis
-    parameters = metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, result_file, a_to_b_edges
+if failure['dependency'] == True and mass == False and use_csv == True: #for csv only #for dependency analysis
+    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     NETWORK_NAME = file_1_name, file_2_name #list the name of the two networks for the analysis
     conn = None; noia = 1
-    ia.analyse_existing_networks(NETWORK_NAME,conn,db,parameters,noia,use_db,use_csv)
-elif DEPENDENCY == True and mass == False:
-    parameters = metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, result_file, a_to_b_edges
+    ia.analyse_existing_networks(NETWORK_NAME,conn,dbname,parameters,noia,use_db,use_csv)
+elif failure['dependency'] == True and mass == False:
+    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     complete = ia.main(GA, GB, parameters,logfilepath)
     print complete
-elif mass == False and STAND_ALONE == True: #for single network analysis
-    parameters = metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, result_file, a_to_b_edges
+elif mass == False and failure['stand_alone'] == True: #for single network analysis
+    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     complete = ia.main(GA, GB, parameters,logfilepath)
     print 'complete:', complete
 elif INTERDEPENDENCY == True and mass == False: #for interdependendency analysis
@@ -275,7 +273,7 @@ elif mass == True and STAND_ALONE == True: #for mass single analysis
     hra = False; hr = False; hc = False; tree = True
     
     noioa = 5   #number_of_iterations_of_analysis
-    parameters = metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, result_file, a_to_b_edges
+    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
 
     if air== True:
         db = 'air'
