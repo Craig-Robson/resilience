@@ -105,20 +105,22 @@ failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
 handling_variables = {'remove_subgraphs':False,'remove_isolates':True,'no_isolates':False}  
 
 #------------------setting of data input type------------------------------
+use_nx_single = True
 use_db = False
 use_csv = False
-mass = True
+mass = False
 
 if mass == True:
     import network_data as network_data #does not currently work as no file path for it yet
 
 #------------------use lof file--------------------------------------------
-logfilepath = 'C:/a8243587_DATA/logfile.txt'
+#logfilepath = 'C:/a8243587_DATA/logfile.txt'
+logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
 
 #------------------path name for the result files--------------------------
 "when using analysing exisiting networks dont need name of outputfile here, just the location"
-result_file = 'C:/a8243587_DATA/Dropbox/result.txt'
-#result_file = 'C:/Users/Craig/Dropbox/robustness/results/' #for laptop
+#result_file = 'C:/a8243587_DATA/Dropbox/result.txt'
+result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
 
 #------------------path name for the input files---------------------------
 file_path = 'H:/robustness/csv_network_data/'
@@ -208,7 +210,7 @@ option_metrics_A = {'size_of_components':size_of_components_A,'giant_component_s
                     'avg_nodes_in_components':av_nodes_in_components_A,
                     'isolated_nodes':isolated_nodes_A,'no_of_isolated_nodes':isolated_n_count_A,
                     'no_of_isolated_nodes_removed':isolated_n_count_removed_A,
-                    'subnodes':subnodes_A,'subnodes_count':subnodes_count_A,
+                    'subnodes':subnodes_A,'no_of_subnodes':subnodes_count_A,
                     'path_length':path_length_A,'avg_path_length_of_components':av_path_length_components_A,
                     'path_length_of_giant_component':giant_component_av_path_length_A,
                     'path_length_geo':av_path_length_geo_A,'avg_degree':average_degree_A,
@@ -236,7 +238,12 @@ if failure['interdependency']==True: print 'This functionality is not currently 
 if failure['cascading']==True: print 'WARNING! This functionality has not been tested fully yet.'
 
 #------------------analysis methods----------------------------------------
-if use_csv == True:
+if use_nx_single == True:
+    write_results_table=False;store_n_e_atts=False;write_step_to_db=False
+    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    complete = ia.main(GA, GB, parameters,logfilepath)
+elif use_csv == True:
+    write_results_table=False;store_n_e_atts=False;write_step_to_db=False
     parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     NETWORK_NAME = file_1_name, file_2_name #list the name of the two networks for the analysis
     conn = None; noia = 1
@@ -246,6 +253,7 @@ elif use_db == True:
     complete = ia.main(GA, GB, parameters,logfilepath)
 elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     print 'where mass = True and Stand_alone = true'
+    write_results_table=False;store_n_e_atts=False;write_step_to_db=False
     '''select which network types to analyse'''
     lightrail = False; roads_national = False; roads_regional = False
     air = False; other = False; infrastructure = False

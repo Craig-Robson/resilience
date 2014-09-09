@@ -32,7 +32,6 @@ def sequential_degree(G,INTERDEPENDENCY): #formally cascading
             raise error_classes.CalculationError('There are no edges in the network, thus no values could be computed.')
     else: 
         #remove the edges realted to the node - networkx does this automatically when you remove the node I think
-        G = network_handling.remove_edges(G,node,INTERDEPENDENCY) 
         #remove the node from the network
         G.remove_node(node) #remove the node
     #return the editied network and the node removed
@@ -51,7 +50,6 @@ def sequential_betweenness(G,INTERDEPENDENCY):
         raise error_classes.GeneralError('Error. An error occured when calcualting the node to remove.')
     else:
         #remove all edges which feature the node and then the node
-        G = network_handling.remove_edges(G, node,INTERDEPENDENCY) 
         G.remove_node(node) 
     #return the eddited network and the node remvoed
     return G,node
@@ -69,7 +67,6 @@ def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
         while nx.degree(G, node) == 0: 
             node = random.choice(G.nodes())
     #remove the edge assocaiated with the node and then the node
-    G = network_handling.remove_edges(G, node, INTERDEPENDENCY)
     G.remove_node(node)
     #return the network and the node which was removed
     return G,node
@@ -126,7 +123,6 @@ def cascading_failure(G, dlist, dead,k,subnodes_A, isolated_nodes_A, removed_nod
                     nlist.append(fnode)
                     y += 1
                 #remove the edges and the node
-                G = network_handling.remove_edges(G, node,INTERDEPENDENCY)
                 G.remove_node(node)
                 removed_nodes.append(node) #
         i += 1
@@ -148,7 +144,6 @@ def single_random(G,node_list, INTERDEPENDENCY):
     node = random.choice(node_list) 
     #use Gtemp as need to reset G to its original state for the next iteration
     Gtemp = G
-    Gtemp = network_handling.remove_edges(Gtemp, node, INTERDEPENDENCY)
     Gtemp.remove_node(node)
     #need to keep track of the nodes removed, hence a list
     node_list.remove(node)
