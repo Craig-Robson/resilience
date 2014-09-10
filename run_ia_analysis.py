@@ -169,14 +169,7 @@ else:
 #-----------------------weight field for path length-----------------------
 length = 'shape_leng'
 
-#------------------declaration of basic metrics for analysis---------------
-nodes_removed_A = True #nodes removed from network A
-node_count_removed_A = True #count of ndoes removed from network A   
-count_nodes_left_A = True #the number of nodes left in network A
-number_of_edges_A = True #number of edges in the network
-number_of_components_A = True #number of subgraphs/isolated nodes
-isolated_n_count_A = True #the number of isolated nodes
-
+isolated_n_count_A = True
 #------------------declaration of optional metrics-------------------------
 size_of_components_A = False
 giant_component_size_A = False
@@ -203,9 +196,9 @@ if failure['stand_alone'] == False:
     if av_path_length_geo_A <> False: length = 'length'
         
 #------------------compile metrics into variables--------------------------
-basic_metrics_A = {'nodes_removed':nodes_removed_A,'no_of_nodes_removed':node_count_removed_A,
-                   'no_of_nodes_left':count_nodes_left_A,'number_of_edges':number_of_edges_A,
-                   'number_of_components':number_of_components_A}
+basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,
+                   'no_of_nodes':True,'number_of_edges':True,
+                   'number_of_components':True}
 option_metrics_A = {'size_of_components':size_of_components_A,'giant_component_size':giant_component_size_A,
                     'avg_nodes_in_components':av_nodes_in_components_A,
                     'isolated_nodes':isolated_nodes_A,'no_of_isolated_nodes':isolated_n_count_A,

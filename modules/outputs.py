@@ -210,7 +210,7 @@ def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiter
         except:
             raise error_classes.WriteError('Error. Could not open text file to write results to. File attempted was: %s' %(fileName))
         #send to the textout function to write the results out
-        txtout(outputfile,graphparameters, parameters)
+        txtout(outputfile,graphparameters, parameters,metrics)
     #pack the metric values together again
     values = basicA, basicB, optionA, optionB  
     return values,error       
@@ -410,89 +410,87 @@ def results(basic_metrics_A, basic_metrics_B): #pritn out and write out the resu
         print 'count_nodes_left_B: ', count_nodes_left_B
         print 'number_of_components_B: ', number_of_components_B 
 
-def write_text_file(outputfile,CASCADING,basic_metrics,option_metrics):
+def write_text_file(outputfile,CASCADING,basic,option):
     '''Writes the metrics to the text file.
     Inputs: file operand, CASCADING variable, basic_metrics set and option_metrics set
     Returns: Nothing'''
     #unpack the variables
-    nodes_removed,node_count_removed,count_nodes_left,number_of_edges,number_of_components,isolated_n_count = basic_metrics
-    size_of_components,giant_component_size,av_nodes_in_components,isolated_nodes,isolated_n_count_removed,subnodes,subnodes_count,path_length,av_path_length_components,giant_component_av_path_length,av_path_length_geo,average_degree,inter_removed_count = option_metrics
+    #nodes_removed,node_count_removed,count_nodes_left,number_of_edges,number_of_components,isolated_n_count = basic_metrics
+    #size_of_components,giant_component_size,av_nodes_in_components,isolated_nodes,isolated_n_count_removed,subnodes,subnodes_count,path_length,av_path_length_components,giant_component_av_path_length,av_path_length_geo,average_degree,inter_removed_count = option_metrics
 
-    #write the basic metrics to the text file - if not set as False
-    if nodes_removed <> False:
-        outputfile.write('\nnodes removed,' + str(tools.replace_all(str(nodes_removed), {',':';','];':'],'})))
-    if node_count_removed <> False:
-        outputfile.write('\ncount removed nodes,' + str(node_count_removed))
-    if count_nodes_left <> False:
-        outputfile.write('\nnumber of nodes left,' + str(count_nodes_left))   
-    if number_of_edges <> False:
-        outputfile.write('\nnumber of edges,' + str(number_of_edges))        
-    if number_of_components <> False:
-        outputfile.write('\nnumber of components,' + str(number_of_components))    
+    #write the basic metrics to the text file
+    outputfile.write('\nnodes removed,' + str(tools.replace_all(str(basic['nodes_removed']), {',':';','];':'],'})))
+    outputfile.write('\ncount removed nodes,' + str(basic['no_of_nodes_removed']))
+    outputfile.write('\nnumber of nodes left,' + str(basic['no_of_nodes']))   
+    outputfile.write('\nnumber of edges,' + str(basic['number_of_edges']))
+    outputfile.write('\nnumber of components,' + str(basic['number_of_components']))
     #write the optional metrics to the rext file - if not set as False
-    if size_of_components <> False:
-        outputfile.write('\nsize of each component,' + str(tools.replace_all(str(size_of_components),{',':';','];':'],'})))
-    if giant_component_size <> False:
-        outputfile.write('\nnumber of nodes in giant component,' + str(giant_component_size))
-    if av_nodes_in_components <> False:
-        outputfile.write('\naverage size of components,' + str(av_nodes_in_components))
-    if isolated_nodes <> False:
-        outputfile.write('\nisolated nodes,' + str(tools.replace_all(str(isolated_nodes), {',':';','];':'],'})))
-    if isolated_n_count <> False:
-        outputfile.write('\nisolated node count,' + str(str(isolated_n_count)))
-    if isolated_n_count_removed <> False:
-        outputfile.write('\nisolated node count,' + str(isolated_n_count_removed))
-    if subnodes <> False:
-        outputfile.write('\nsubnodes,' + str(tools.replace_all(str(tools.replace_all(str(subnodes) , {',':';',']];':']],'})),{'[];':','})))
-    if subnodes_count <> False:
-        outputfile.write('\nsubnodes count,' + str(subnodes_count))  
-    if path_length <> False:
-        outputfile.write('\naverage path length for whole graph,' + str(path_length))        
-    if av_path_length_components <> False:
-        outputfile.write('\naverage path length for each component,' + str(tools.replace_all(str(av_path_length_components),{',':';','];':'],'})))
-    if giant_component_av_path_length <> False:
-        outputfile.write('\naverage path length of giant component,' + str(giant_component_av_path_length))
-    if average_degree <> False:
-        outputfile.write('\naverage degree,' + str(average_degree))
+    if option['size_of_components'] <> False:
+        outputfile.write('\nsize of each component,' + str(tools.replace_all(str(option['size_of_components']),{',':';','];':'],'})))
+    if option['giant_component_size'] <> False:
+        outputfile.write('\nnumber of nodes in giant component,' + str(option['giant_component_size']))
+    if option['avg_nodes_in_components'] <> False:
+        outputfile.write('\naverage size of components,' + str(option['avg_nodes_in_components']))
+    if option['isolated_nodes'] <> False:
+        outputfile.write('\nisolated nodes,' + str(tools.replace_all(str(option['isolated_nodes']), {',':';','];':'],'})))
+    if option['no_of_isolated_nodes'] <> False:
+        outputfile.write('\nisolated node count,' + str(str(option['no_of_isolated_nodes'])))
+    if option['no_of_isolated_nodes_removed'] <> False:
+        outputfile.write('\nisolated node count,' + str(option['no_of_isolated_nodes_removed']))
+    if option['subnodes'] <> False:
+        outputfile.write('\nsubnodes,' + str(tools.replace_all(str(tools.replace_all(str(option['subnodes']) , {',':';',']];':']],'})),{'[];':','})))
+    if option['no_of_subnodes'] <> False:
+        outputfile.write('\nsubnodes count,' + str(option['no_of_subnodes']))  
+    if option['path_length'] <> False:
+        outputfile.write('\naverage path length for whole graph,' + str(option['path_length']))  
+    if option['avg_path_length_of_components'] <> False:
+        outputfile.write('\naverage path length for each component,' + str(tools.replace_all(str(option['avg_path_length_components']),{',':';','];':'],'})))
+    if option['path_length_of_giant_component'] <> False:
+        outputfile.write('\naverage path length of giant component,' + str(option['path_length_of_giant_component']))
+    if option['avg_degree'] <> False:
+        outputfile.write('\naverage degree,' + str(option['avg_degree']))
     
-def txtout(outputfile,graphparameters, parameters):        
+def txtout(outputfile,graphparameters, parameters,metrics):        
     '''Writes the results to a specified text file.
     Inputs: the file operand, the graphparameters (metrics etc) and the parameters
     Returns: Nothing'''
     #unpack the variables
-    metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges = parameters    
-    networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics = graphparameters    
+    failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
+    #metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges = parameters    
+    networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters 
+    #networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics = graphparameters    
     GA, GB, GtempA, GtempB = networks
-    nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A,isolated_n_count_A = basic_metrics_A     
-    size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A = option_metrics_A
+    basicA,basicB,optionA,optionB,interdependency,cascading=metrics
+    #nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A,isolated_n_count_A = basic_metrics_A     
+    #size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A = option_metrics_A
     #if not just single analysis, unpack emtrics for network B as well
-    if STAND_ALONE == False:
-        nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B = basic_metrics_B
-        size_of_components_B,giant_component_size_B,av_nodes_in_components_B,isolated_nodes_B,isolated_n_count_B,isolated_n_count_removed_B,subnodes_B,subnodes_count_B,path_length_B,av_path_length_components_B,giant_component_av_path_length_B,av_path_length_geo_B,average_degree_B,inter_removed_count_B = option_metrics_B
-    else: basic_metrics_B = None; option_metrics_B = None
+    #if failure['stand_alone'] == False:
+        #nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B = basic_metrics_B
+        #size_of_components_B,giant_component_size_B,av_nodes_in_components_B,isolated_nodes_B,isolated_n_count_B,isolated_n_count_removed_B,subnodes_B,subnodes_count_B,path_length_B,av_path_length_components_B,giant_component_av_path_length_B,av_path_length_geo_B,average_degree_B,inter_removed_count_B = option_metrics_B
+    #else: basic_metrics_B = None; option_metrics_B = None
     #write the parameters for the analysis out
     outputfile.write('\nThe analysis parameters were:')    
-    if SINGLE == True: outputfile.write('SINGLE = True, ')
-    elif SEQUENTIAL == True: outputfile.write('Sequential = True, ')
-    elif CASCADING == True: outputfile.write('Cascading = True, ') 
+    if failure['single'] == True: outputfile.write('SINGLE = True, ')
+    elif failure['sequential'] == True: outputfile.write('Sequential = True, ')
+    elif failure['cascading'] == True: outputfile.write('Cascading = True, ') 
     else: outputfile.write('Error!')
     
-    if RANDOM == True: outputfile.write('RANDOM = True')
-    elif DEGREE == True: outputfile.write('DEGREE = True')
-    elif BETWEENNESS == True: outputfile.write('BETWEENNESS = True')
+    if failure['random'] == True: outputfile.write('RANDOM = True')
+    elif failure['degree'] == True: outputfile.write('DEGREE = True')
+    elif failure['betweenness'] == True: outputfile.write('BETWEENNESS = True')
     else: outputfile.write('Error!')    
     #write the options used out
-    if REMOVE_SUBGRAPHS == True: outputfile.write(', REMOVE_SUBGRAPHS = True')
-    if REMOVE_ISOLATES == True: outputfile.write(', REMOVE_ISOLATES = True')
-    if NO_ISOLATES == True: outputfile.write(', NO_ISOLATES = True')
+    if handling_variables['remove_subgraphs'] == True: outputfile.write(', REMOVE_SUBGRAPHS = True')
+    if handling_variables['remove_isolates'] == True: outputfile.write(', REMOVE_ISOLATES = True')
+    if handling_variables['no_isolates'] == True: outputfile.write(', NO_ISOLATES = True')
     #write out the first few lines for network A
     outputfile.write('\nNETWORK A')
     outputfile.write('\nStart size, ' + str(GA.number_of_nodes()))
-    outputfile.write('\nTook this manny steps: '+ str(len(count_nodes_left_A)-1))
+    outputfile.write('\nTook this manny steps: '+ str(len(basicA['no_of_nodes'])-1))
     #use the function to write the metric results out for the network A
-    write_text_file(outputfile,CASCADING,basic_metrics_A,option_metrics_A)     
+    write_text_file(outputfile,failure['cascading'],basicA,optionA)     
     #write the results for the metrics for network B using the function
-    if STAND_ALONE == False:
+    if failure['stand_alone'] == False:
         outputfile.write('\nNETWORK B')
-        write_text_file(outputfile,CASCADING,basic_metrics_B,option_metrics_B)
+        write_text_file(outputfile,failure['cascading'],basicB,optionB)
     

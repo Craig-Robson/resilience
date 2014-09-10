@@ -285,7 +285,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         #------------unpack the holding variables------------------------------
         failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
         basic_metrics['no_of_isolated_nodes'].append(len(nx.isolates(Gtemp)))
-        
+
         #------------check for isoalted nodes---------------------------------
         
         if handling_variables['remove_isolates']==True:
