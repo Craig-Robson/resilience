@@ -36,7 +36,7 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
                 nx_pgnet.write(conn).pgnet(GAWrite,net_name,srid_a,overwrite=True,
                     directed=False,multigraph=False)
             except:
-                #if nx_pgnet.Error():
+                #add networkx error handler in here?
                 print "Error caused by no nodes being left in the network 'a'"
         else:
             nx_pgnet.write(conn).pgnet(GAWrite,net_name,-1,overwrite=True,
@@ -51,7 +51,7 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
                 nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),srid_b,
                    overwrite=True)
             except:
-                #if nx_pgnet.Error():
+                #add networkx error handler in here??
                 print "Error caused by no nodes being left in the network 'b'"
         else:
             nx_pgnet.write(conn).pgnet(GBWrite,(net_name_b+'_'+str(i)),-1,
