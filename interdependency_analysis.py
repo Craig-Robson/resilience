@@ -301,16 +301,14 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     print '!!!!!This needs looking at further!!!!!'
                     option_metrics['isolated_nodes_removed'].append(isolated_nodes)
             else:
-                option_metrics['isolated_nodes'].append([])
-                option_metrics['no_of_isolated_nodes_removed'].append(0)
-                option_metrics['isolated_nodes_removed'].append([])
+                if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append([])
+                if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(0)
+                if option_metrics['isolated_nodes_removed']<>False:option_metrics['isolated_nodes_removed'].append([])
                                     
         elif handling_variables['remove_isolates']==False:
             if option_metrics['no_of_isolated_nodes_removed'] <> False: option_metrics['no_of_isolated_nodes_removed'].append(0)
             if option_metrics['isolated_nodes_removed']<>False: option_metrics['isolated_nodes_removed'].append([])
             if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append([nx.isolates(Gtemp)])
-        else:
-            raise error_classes.GeneralError('Error. REMOVE_ISOLATES variable has become corrupt.')
             
         #----------------if the graph is still connected-----------------------
         num_edges = Gtemp.number_of_edges()        

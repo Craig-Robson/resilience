@@ -114,13 +114,13 @@ if mass == True:
     import network_data as network_data #does not currently work as no file path for it yet
 
 #------------------use lof file--------------------------------------------
-#logfilepath = 'C:/a8243587_DATA/logfile.txt'
-logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
+logfilepath = 'C:/a8243587_DATA/GitRepo/_res_testing/logfile.txt'
+#logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
 
 #------------------path name for the result files--------------------------
 "when using analysing exisiting networks dont need name of outputfile here, just the location"
-#result_file = 'C:/a8243587_DATA/Dropbox/result.txt'
-result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
+result_file = 'C:/a8243587_DATA/GitRepo/_res_testing/result.txt'
+#result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
 
 #------------------path name for the input files---------------------------
 file_path = 'H:/robustness/csv_network_data/'
@@ -175,14 +175,14 @@ node_count_removed_A = True #count of ndoes removed from network A
 count_nodes_left_A = True #the number of nodes left in network A
 number_of_edges_A = True #number of edges in the network
 number_of_components_A = True #number of subgraphs/isolated nodes
-  
+isolated_n_count_A = True #the number of isolated nodes
+
 #------------------declaration of optional metrics-------------------------
 size_of_components_A = False
 giant_component_size_A = False
 av_nodes_in_components_A = False
-isolated_nodes_A = True #THIS NEEDS TO BE IN THE BASIC SET
-isolated_n_count_A = True #THIS NEEDS TO BE IN THE BASIC SET
-isolated_n_count_removed_A = False
+isolated_nodes_A = False
+isolated_n_count_removed_A = False #THIS NEEDS TO BE IN THE BASIC SET
 subnodes_A = False
 subnodes_count_A = False   
 path_length_A = False
@@ -225,7 +225,7 @@ metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B
 #------------------not sure what this is doing-----------------------------
 file_1_name = 'dependencey_test_n1'
 file_2_name = 'dependencey_test_n2'   
-fileName = 'file location/file name.txt'
+fileName = result_file
 
 #to save the metrics at end of each time step to db
 write_results_table=True 
