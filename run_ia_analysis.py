@@ -156,6 +156,14 @@ srid_a = 27700; srid_b = 27700;spatial_a=True;spatial_b=True
 save_a = True; save_b = True
 db_parameters = conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b
 
+#------------------option when analysis from db------------------------------
+#to save the metrics at end of each time step to db
+write_results_table=True
+#to wirte metrics to the attributes of the nodes and edges
+store_n_e_atts=True
+#to save network(s) at each time step to the database
+write_step_to_db = True
+
 #------------------setting of dependency edges-----------------------------
 if failure['dependency'] == True or failure['interdependency'] == True:
     a_to_b_edges = [(3,1),(3,2),(5,3)]
@@ -166,48 +174,25 @@ if failure['dependency'] == True or failure['interdependency'] == True:
 else:
     a_to_b_edges = None  
 
-#-----------------------weight field for path length-----------------------
-length = 'shape_leng'
-
-isolated_n_count_A = True
-#------------------declaration of optional metrics-------------------------
-size_of_components_A = False
-giant_component_size_A = False
-av_nodes_in_components_A = False
-isolated_nodes_A = False
-isolated_n_count_removed_A = False #THIS NEEDS TO BE IN THE BASIC SET
-subnodes_A = False
-subnodes_count_A = False   
-path_length_A = False
-av_path_length_components_A = False
-av_path_length_geo_A = False
-giant_component_av_path_length_A = False
-average_degree_A = False
-inter_removed_count_A = False #THIS IS ONLY NEEDED IF INTERDEPENDENCY
-density_A = False
-
-#------------------metrics needed for cascading analysis - overrides above
-if failure['cascading'] == True:
-    pass #for the moment anyway
-
-#------------------option to set the attribute which contins the length of the edges
-if av_path_length_geo_A <> False: length = 'length'
-if failure['stand_alone'] == False:
-    if av_path_length_geo_A <> False: length = 'length'
-        
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,
                    'no_of_nodes':True,'number_of_edges':True,
-                   'number_of_components':True}
-option_metrics_A = {'size_of_components':size_of_components_A,'giant_component_size':giant_component_size_A,
-                    'avg_nodes_in_components':av_nodes_in_components_A,
-                    'isolated_nodes':isolated_nodes_A,'no_of_isolated_nodes':isolated_n_count_A,
-                    'no_of_isolated_nodes_removed':isolated_n_count_removed_A,
-                    'subnodes':subnodes_A,'no_of_subnodes':subnodes_count_A,
-                    'path_length':path_length_A,'avg_path_length_of_components':av_path_length_components_A,
-                    'path_length_of_giant_component':giant_component_av_path_length_A,
-                    'path_length_geo':av_path_length_geo_A,'avg_degree':average_degree_A,
-                    'no_of_inter_removed':inter_removed_count_A,'density':density_A}
+                   'number_of_components':True,'no_of_isolates':True}
+option_metrics_A = {'size_of_components':False,
+                    'giant_component_size':False,
+                    'avg_nodes_in_components':False,
+                    'isolated_nodes':False,
+                    'no_of_isolated_nodes':False,
+                    'no_of_isolated_nodes_removed':False,
+                    'subnodes':False,
+                    'no_of_subnodes':False,
+                    'path_length':False,
+                    'avg_path_length_of_components':False,
+                    'path_length_of_giant_component':False,
+                    'path_length_geo':False,
+                    'avg_degree':False,
+                    'no_of_inter_removed':False,
+                    'density':False}
 
 if failure['stand_alone'] == False:
     basic_metrics_B = basic_metrics_A.copy()
@@ -215,17 +200,13 @@ if failure['stand_alone'] == False:
 else: basic_metrics_B = None; option_metrics_B = None
 metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
 
-#------------------not sure what this is doing-----------------------------
+#------------------option to set the attribute which contins the length of the edges
+if option_metrics_A['path_length_geo'] <> False: length = 'shape_leng'
+
+#------------------file names for csv based analysis-------------------------
 file_1_name = 'dependencey_test_n1'
 file_2_name = 'dependencey_test_n2'   
-fileName = result_file
 
-#to save the metrics at end of each time step to db
-write_results_table=True 
-store_n_e_atts=True
-
-#to save network(s) at each time step to the database
-write_step_to_db = True
 #------------------run some checks-----------------------------------------
 if failure['interdependency']==True: print 'This functionality is not currently available.'; exit()
 if failure['cascading']==True: print 'WARNING! This functionality has not been tested fully yet.'
@@ -233,16 +214,16 @@ if failure['cascading']==True: print 'WARNING! This functionality has not been t
 #------------------analysis methods----------------------------------------
 if use_nx_single == True:
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
-    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     complete = ia.main(GA, GB, parameters,logfilepath)
 elif use_csv == True:
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
-    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     NETWORK_NAME = file_1_name, file_2_name #list the name of the two networks for the analysis
     conn = None; noia = 1
     ia.analyse_existing_networks(NETWORK_NAME,conn,dbname,parameters,noia,use_db,use_csv)
 elif use_db == True:
-    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     complete = ia.main(GA, GB, parameters,logfilepath)
 elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     print 'where mass = True and Stand_alone = true'
@@ -254,7 +235,7 @@ elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     hra = False; hr = False; hc = False; tree = True
     
     noioa = 5   #number_of_iterations_of_analysis
-    parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
 
     if air== True:
         db = 'air'
@@ -315,5 +296,4 @@ elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     else:
         print 'no networks selected'
 else:
-    print 'combination of parameters is not correct'        
-    print 'check analysis parameters'
+    print 'combination of parameters is not correct'
