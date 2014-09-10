@@ -415,15 +415,16 @@ def write_text_file(outputfile,CASCADING,basic,option):
     Inputs: file operand, CASCADING variable, basic_metrics set and option_metrics set
     Returns: Nothing'''
     #unpack the variables
-    #nodes_removed,node_count_removed,count_nodes_left,number_of_edges,number_of_components,isolated_n_count = basic_metrics
-    #size_of_components,giant_component_size,av_nodes_in_components,isolated_nodes,isolated_n_count_removed,subnodes,subnodes_count,path_length,av_path_length_components,giant_component_av_path_length,av_path_length_geo,average_degree,inter_removed_count = option_metrics
-
+    
     #write the basic metrics to the text file
     outputfile.write('\nnodes removed,' + str(tools.replace_all(str(basic['nodes_removed']), {',':';','];':'],'})))
     outputfile.write('\ncount removed nodes,' + str(basic['no_of_nodes_removed']))
     outputfile.write('\nnumber of nodes left,' + str(basic['no_of_nodes']))   
     outputfile.write('\nnumber of edges,' + str(basic['number_of_edges']))
     outputfile.write('\nnumber of components,' + str(basic['number_of_components']))
+    outputfile.write('\nnumber of isolates,' + str(str(basic['no_of_isolated_nodes'])))
+    outputfile.write('\nisolates removed,' + str(str(basic['isolated_nodes_removed'])))
+    
     #write the optional metrics to the rext file - if not set as False
     if option['size_of_components'] <> False:
         outputfile.write('\nsize of each component,' + str(tools.replace_all(str(option['size_of_components']),{',':';','];':'],'})))
@@ -433,8 +434,6 @@ def write_text_file(outputfile,CASCADING,basic,option):
         outputfile.write('\naverage size of components,' + str(option['avg_nodes_in_components']))
     if option['isolated_nodes'] <> False:
         outputfile.write('\nisolated nodes,' + str(tools.replace_all(str(option['isolated_nodes']), {',':';','];':'],'})))
-    if option['no_of_isolated_nodes'] <> False:
-        outputfile.write('\nisolated node count,' + str(str(option['no_of_isolated_nodes'])))
     if option['no_of_isolated_nodes_removed'] <> False:
         outputfile.write('\nisolated node count,' + str(option['no_of_isolated_nodes_removed']))
     if option['subnodes'] <> False:
@@ -456,18 +455,10 @@ def txtout(outputfile,graphparameters, parameters,metrics):
     Returns: Nothing'''
     #unpack the variables
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
-    #metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges = parameters    
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters 
-    #networks,i,node_list,to_b_nodes, from_a_nodes, basic_metrics_A,basic_metrics_B,option_metrics_A, option_metrics_B,interdependency_metrics,cascading_metrics = graphparameters    
     GA, GB, GtempA, GtempB = networks
     basicA,basicB,optionA,optionB,interdependency,cascading=metrics
-    #nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A,isolated_n_count_A = basic_metrics_A     
-    #size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A = option_metrics_A
-    #if not just single analysis, unpack emtrics for network B as well
-    #if failure['stand_alone'] == False:
-        #nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B = basic_metrics_B
-        #size_of_components_B,giant_component_size_B,av_nodes_in_components_B,isolated_nodes_B,isolated_n_count_B,isolated_n_count_removed_B,subnodes_B,subnodes_count_B,path_length_B,av_path_length_components_B,giant_component_av_path_length_B,av_path_length_geo_B,average_degree_B,inter_removed_count_B = option_metrics_B
-    #else: basic_metrics_B = None; option_metrics_B = None
+
     #write the parameters for the analysis out
     outputfile.write('\nThe analysis parameters were:')    
     if failure['single'] == True: outputfile.write('SINGLE = True, ')
@@ -485,7 +476,6 @@ def txtout(outputfile,graphparameters, parameters,metrics):
     if handling_variables['no_isolates'] == True: outputfile.write(', NO_ISOLATES = True')
     #write out the first few lines for network A
     outputfile.write('\nNETWORK A')
-    outputfile.write('\nStart size, ' + str(GA.number_of_nodes()))
     outputfile.write('\nTook this manny steps: '+ str(len(basicA['no_of_nodes'])-1))
     #use the function to write the metric results out for the network A
     write_text_file(outputfile,failure['cascading'],basicA,optionA)     

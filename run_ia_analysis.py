@@ -114,13 +114,13 @@ if mass == True:
     import network_data as network_data #does not currently work as no file path for it yet
 
 #------------------use lof file--------------------------------------------
-logfilepath = 'C:/a8243587_DATA/GitRepo/_res_testing/logfile.txt'
-#logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
+#logfilepath = 'C:/a8243587_DATA/GitRepo/_res_testing/logfile.txt'
+logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
 
 #------------------path name for the result files--------------------------
 "when using analysing exisiting networks dont need name of outputfile here, just the location"
-result_file = 'C:/a8243587_DATA/GitRepo/_res_testing/result.txt'
-#result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
+#result_file = 'C:/a8243587_DATA/GitRepo/_res_testing/result.txt'
+result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
 
 #------------------path name for the input files---------------------------
 file_path = 'H:/robustness/csv_network_data/'
@@ -175,14 +175,13 @@ else:
     a_to_b_edges = None  
 
 #------------------compile metrics into variables--------------------------
-basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,
-                   'no_of_nodes':True,'number_of_edges':True,
-                   'number_of_components':True,'no_of_isolates':True}
+basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,
+                   'number_of_edges':True,'number_of_components':True,
+                   'no_of_isolated_nodes':True,'isolated_nodes_removed':True,}
 option_metrics_A = {'size_of_components':False,
                     'giant_component_size':False,
                     'avg_nodes_in_components':False,
                     'isolated_nodes':False,
-                    'no_of_isolated_nodes':False,
                     'no_of_isolated_nodes_removed':False,
                     'subnodes':False,
                     'no_of_subnodes':False,
@@ -202,6 +201,7 @@ metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B
 
 #------------------option to set the attribute which contins the length of the edges
 if option_metrics_A['path_length_geo'] <> False: length = 'shape_leng'
+else: length = None
 
 #------------------file names for csv based analysis-------------------------
 file_1_name = 'dependencey_test_n1'
