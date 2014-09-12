@@ -292,14 +292,15 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if Gtemp.number_of_edges() <> 0:
                 Gtemp,node_list,basic_metrics,option_metrics,isolated_nodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(Gtemp,node_list,option_metrics,basic_metrics,to_b_nodes,from_a_nodes,a_to_b_edges,net)
                 if net == 'B':         
-                    option_metrics['isolated_nodes'].append(isolated_nodes)
-                    option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
+                    if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
+                    if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
                     basic_metrics['isolated_nodes_removed'].append(isolated_nodes)
                     basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+len(isolated_nodes))
                     basic_metrics['nodes_removed'].append(basic_metrics['nodes_removed'].pop()+option_metrics['isolated_nodes_removed'][i])
                 if net == 'A':
                     print '!!!!!This needs looking at further!!!!!'
                     basic_metrics['isolated_nodes_removed'].append(isolated_nodes)
+                    if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
             else:
                 if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append([])
                 if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(0)

@@ -423,7 +423,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
     outputfile.write('\nnumber of edges,' + str(basic['no_of_edges']))
     outputfile.write('\nnumber of components,' + str(basic['no_of_components']))
     outputfile.write('\nnumber of isolates,' + str(str(basic['no_of_isolated_nodes'])))
-    outputfile.write('\nisolates removed,' + str(str(basic['isolated_nodes_removed'])))
+    outputfile.write('\nisolates removed,' + str(tools.replace_all(str(basic['isolated_nodes_removed']), {',':';','];':'],'})))
     
     #write the optional metrics to the rext file - if not set as False
     if option['size_of_components'] <> False:
@@ -435,11 +435,11 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['isolated_nodes'] <> False:
         outputfile.write('\nisolated nodes,' + str(tools.replace_all(str(option['isolated_nodes']), {',':';','];':'],'})))
     if option['no_of_isolated_nodes_removed'] <> False:
-        outputfile.write('\nisolated node count,' + str(option['no_of_isolated_nodes_removed']))
+        outputfile.write('\nnumber of isolated nodes removed,' + str(option['no_of_isolated_nodes_removed']))
     if option['subnodes'] <> False:
         outputfile.write('\nsubnodes,' + str(tools.replace_all(str(tools.replace_all(str(option['subnodes']) , {',':';',']];':']],'})),{'[];':','})))
     if option['no_of_subnodes'] <> False:
-        outputfile.write('\nsubnodes count,' + str(option['no_of_subnodes']))  
+        outputfile.write('\nnumber of subnodes,' + str(option['no_of_subnodes']))  
     if option['avg_path_length'] <> False:
         outputfile.write('\naverage path length for whole graph,' + str(option['avg_path_length']))
     if option['avg_path_length_of_components'] <> False:
