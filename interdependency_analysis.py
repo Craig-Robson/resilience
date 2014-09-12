@@ -253,7 +253,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         #analyse network A
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,net='A') #run the analysis        
         
-        if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+optionA['isolated_nodes_removed'][i])
+        if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
         
         #------------move counter on-----------------------------------------
         i += 1   
@@ -261,7 +261,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     elif failure['stand_alone'] and failure['dependency']==False and failure['interdependency']==False :
         #run the analysis
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,net='A') #run the analysis
-        if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+optionA['isolated_nodes_removed'][i])
+        if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
         i += 1  
     else:
         raise error_classes.GeneralError('Error. No analysis type has been selected.')
@@ -334,7 +334,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 #get a list of all connected components
                 temp = nx.connected_component_subgraphs(Gtemp)
                 #add the number components to the respective list
-                basic_metrics['number_of_components'].append(len(temp))
+                basic_metrics['no_of_components'].append(len(temp))
                 
                 temp=[]
                 if option_metrics['subnodes']<>False:
@@ -352,8 +352,8 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     if option_metrics['no_of_subnodes']<>False:option_metrics['no_of_subnodes'].append(no_of_subnodes)
                 
                 #calcualte the averge path length if needed
-                if option_metrics['path_length'] <> False:
-                    option_metrics['path_length'].append(network_handling.whole_graph_av_path_length(Gtemp))
+                if option_metrics['avg_path_length'] <> False:
+                    option_metrics['avg_path_length'].append(network_handling.whole_graph_av_path_length(Gtemp))
             else:
                 #there is an error with the variable
                 raise error_classes.GeneralError('Error. Variable REMOVE_SUBGRAPHS must be set as True or False only.')
@@ -372,48 +372,48 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             #set i really high so iteraion stops at the end of this step
             i = -100
             #add values for the metrics which are not set as False
-            if option_metrics['path_length'] <> False: option_metrics['path_length'].append(0.0)
-            if option_metrics['path_length_geo'] <> False: option_metrics['path_length_geo'].append(0.0)
-            if option_metrics['path_length_of_giant_component']<> False: option_metrics['path_length_of_giant_component'].append(0.0)
+            if option_metrics['avg_path_length'] <> False: option_metrics['avg_path_length'].append(0.0)
+            if option_metrics['avg_geo_path_length'] <> False: option_metrics['avg_geo_path_length'].append(0.0)
+            if option_metrics['avg_path_length_of_giant_component']<> False: option_metrics['avg_path_length_of_giant_component'].append(0.0)
             if option_metrics['giant_component_size'] <> False: option_metrics['giant_component_size'].append(0)
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
-            if option_metrics['avg_nodes_in_components']<>False: option_metrics['avg_nodes_in_components']=0
-            basic_metrics['number_of_components'].append(nx.number_connected_components(Gtemp))
-            basic_metrics['number_of_edges'].append(0)
+            if option_metrics['avg_size_of_components']<>False: option_metrics['avg_size_of_components']=0
+            basic_metrics['no_of_components'].append(nx.number_connected_components(Gtemp))
+            basic_metrics['no_of_edges'].append(0)
             #set iterate as False so it stops after this time step
             iterate = False
             
         #------------if the number of edge is greater than zero----------------
         elif numofedges <> 0:
-            if option_metrics['path_length'] <> False:
+            if option_metrics['avg_path_length'] <> False:
                 #claculates the average path length of the whole network if not dissconnected
                 average = network_handling.whole_graph_av_path_length(Gtemp)
-                option_metrics['path_length'].append(average)
+                option_metrics['avg_path_length'].append(average)
                 Gtemp.graph['apl']=average
-            if option_metrics['path_length_geo']<>False:
+            if option_metrics['avg_geo_path_length']<>False:
                 length_att = False
                 for edge in Gtemp.edges(data=True):
                     for key in edge[2].keys():
                         if key == str(length):
                             length_att = True
                             break
-                    if length_att == True:option_metrics['path_length_geo'].append(network_handling.whole_graph_av_path_length(Gtemp,length))
-                    else:option_metrics['path_length_geo'].append(None)
+                    if length_att == True:option_metrics['avg_geo_path_length'].append(network_handling.whole_graph_av_path_length(Gtemp,length))
+                    else:option_metrics['avg_geo_path_length'].append(None)
                     break
-            if option_metrics['path_length_of_giant_component'] <> False:
+            if option_metrics['avg_path_length_of_giant_component'] <> False:
                 #gets a lists of the connected components
                 gbig = nx.connected_component_subgraphs(Gtemp)
                 #gets the average path length in the largest connected component
                 av_len = nx.average_shortest_path_length(gbig[0])
-                option_metrics['path_length_of_giant_component'].append(av_len)
+                option_metrics['avg_path_length_of_giant_component'].append(av_len)
             if option_metrics['giant_component_size'] <> False: 
                 #gets the size of the largest connected component
                 option_metrics['giant_component_size'].append((nx.connected_component_subgraphs(Gtemp)[0]).number_of_nodes()) #get the number of ndoes in the largest component
-            if option_metrics['avg_nodes_in_components'] <> False: option_metrics['avg_nodes_in_components'].append(Gtemp.number_of_nodes()/len(nx.connected_component_subgraphs(Gtemp)))  
+            if option_metrics['avg_size_of_components'] <> False: option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/len(nx.connected_component_subgraphs(Gtemp)))  
             #add the number of edges to the respective list
 
-            basic_metrics['number_of_edges'].append(Gtemp.number_of_edges())
+            basic_metrics['no_of_edges'].append(Gtemp.number_of_edges())
                             
             if option_metrics['avg_degree'] <> False:       
                 degree_list = Gtemp.degree()
@@ -469,7 +469,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     basicA['no_of_edges'] = [GA.number_of_edges()] #number of edges in the network
     basicA['no_of_components'] = [nx.number_connected_components(GA)] #number of subgraphs
     basicA['no_of_isolated_nodes'] = [len(nx.isolates(GA))]
-    basicA['no_of_isolated_nodes_removed'] = [[]]
+    basicA['isolated_nodes_removed'] = [[]]
     
     basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
        
@@ -480,7 +480,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         basicB['no_of_edges'] = [GB.number_of_edges()] #number of edges in the network
         basicB['no_of_components'] = [nx.number_connected_components(GB)] #number of subgraphs
         basicB['no_of_isolated_nodes'] = [len(nx.isolates(GB))]
-        basicB['no_of_isolated_nodes_removed'] = [[]]
+        basicB['isolated_nodes_removed'] = [[]]
         
         
     if optionA['size_of_components']==True:
