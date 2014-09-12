@@ -365,9 +365,17 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             #update the metrics
             if option_metrics['subnodes'] <> False: option_metrics['subnodes'].append([])
             if option_metrics['no_of_subnodes'] <> False: option_metrics['no_of_subnodes'].append(0)
+        
+        #-------metric calcs which work no matter the state of the network-----
+        if option_metrics['size_of_components']<>False:
+            temp = []
+            for g in nx.connected_component_subgraphs(Gtemp):
+                temp.append(g.number_of_nodes())
+            option_metrics['size_of_components'].append(temp)
+
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
-        numofedges = Gtemp.number_of_edges()
+        numofedges = Gtemp.number_of_edges()                      
         #------------if there are no edges left--------------------------------
         if numofedges == 0: 
             #set i really high so iteraion stops at the end of this step
@@ -485,6 +493,10 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         
         
     if optionA['size_of_components']==True:
+        temp = []
+        for g in nx.connected_component_subgraphs(GA):
+            temp.append(g.number_of_nodes())
+        optionA['size_of_components']=[temp]
         print '!!!!! Need to finish this for the metric size of components!!!!!'
     if optionA['giant_component_size']==True:
         optionA['giant_component_size']=[(nx.connected_component_subgraphs(GA)[0]).number_of_nodes()]
