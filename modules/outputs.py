@@ -420,8 +420,8 @@ def write_text_file(outputfile,CASCADING,basic,option):
     outputfile.write('\nnodes removed,' + str(tools.replace_all(str(basic['nodes_removed']), {',':';','];':'],'})))
     outputfile.write('\ncount removed nodes,' + str(basic['no_of_nodes_removed']))
     outputfile.write('\nnumber of nodes left,' + str(basic['no_of_nodes']))   
-    outputfile.write('\nnumber of edges,' + str(basic['number_of_edges']))
-    outputfile.write('\nnumber of components,' + str(basic['number_of_components']))
+    outputfile.write('\nnumber of edges,' + str(basic['no_of_edges']))
+    outputfile.write('\nnumber of components,' + str(basic['no_of_components']))
     outputfile.write('\nnumber of isolates,' + str(str(basic['no_of_isolated_nodes'])))
     outputfile.write('\nisolates removed,' + str(str(basic['isolated_nodes_removed'])))
     
@@ -430,8 +430,8 @@ def write_text_file(outputfile,CASCADING,basic,option):
         outputfile.write('\nsize of each component,' + str(tools.replace_all(str(option['size_of_components']),{',':';','];':'],'})))
     if option['giant_component_size'] <> False:
         outputfile.write('\nnumber of nodes in giant component,' + str(option['giant_component_size']))
-    if option['avg_nodes_in_components'] <> False:
-        outputfile.write('\naverage size of components,' + str(option['avg_nodes_in_components']))
+    if option['avg_size_of_components'] <> False:
+        outputfile.write('\naverage size of components,' + str(option['avg_size_of_components']))
     if option['isolated_nodes'] <> False:
         outputfile.write('\nisolated nodes,' + str(tools.replace_all(str(option['isolated_nodes']), {',':';','];':'],'})))
     if option['no_of_isolated_nodes_removed'] <> False:
@@ -440,14 +440,44 @@ def write_text_file(outputfile,CASCADING,basic,option):
         outputfile.write('\nsubnodes,' + str(tools.replace_all(str(tools.replace_all(str(option['subnodes']) , {',':';',']];':']],'})),{'[];':','})))
     if option['no_of_subnodes'] <> False:
         outputfile.write('\nsubnodes count,' + str(option['no_of_subnodes']))  
-    if option['path_length'] <> False:
-        outputfile.write('\naverage path length for whole graph,' + str(option['path_length']))  
+    if option['avg_path_length'] <> False:
+        outputfile.write('\naverage path length for whole graph,' + str(option['avg_path_length']))
     if option['avg_path_length_of_components'] <> False:
         outputfile.write('\naverage path length for each component,' + str(tools.replace_all(str(option['avg_path_length_components']),{',':';','];':'],'})))
-    if option['path_length_of_giant_component'] <> False:
-        outputfile.write('\naverage path length of giant component,' + str(option['path_length_of_giant_component']))
+    if option['avg_path_length_of_giant_component'] <> False:
+        outputfile.write('\naverage path length of giant component,' + str(option['avg_path_length_of_giant_component']))
+    if option['avg_geo_path_length']<>False:
+        print '!!!!! Output to be sorted for avg geo path length !!!!!'
+    if option['avg_geo_path_length_of_components']<>False:
+        print '!!!!! Output to be sorted for avg geo path length of components !!!!!'
+    if option['avg_geo_path_length_of_giant_component']<>False:
+        print '!!!!! Output to be sorted for avg geo path length of giant component !!!!!'
     if option['avg_degree'] <> False:
         outputfile.write('\naverage degree,' + str(option['avg_degree']))
+    if option['no_of_inter_removed']<>False:
+        print '!!!!! Output to be sorted for no of inter removed !!!!!'
+    if option['density']<>False:
+        print '!!!!! Output to be sorted for density !!!!!'
+    if option['maximum_betweenness_centrality']<>False:
+        print '!!!!! Output to be sorted for max betweenness centrality !!!!!'
+    if option['avg_betweenness_centrality']<>False:
+        print '!!!!! Output to be sorted for avg betweenness centrality !!!!!'
+    if option['assortativity_coefficient']<>False:
+        print '!!!!! Output to be sorted for assortativity coefficient !!!!!'
+    if option['transitivity']<>False:
+        print '!!!!! Output to be sorted for transitivity !!!!!'
+    if option['square_clustering']<>False:
+        print '!!!!! Output to be sorted for square clustering !!!!!'
+    if option['avg_neighbor_connectivity']<>False:
+        print '!!!!! Output to be sorted for avg neighbor connectivity !!!!!'
+    if option['avg_degree_connectivity']<>False:
+        print '!!!!! Output to be sorted for avg degree connectivity !!!!!'
+    if option['avg_degree_centrality']<>False:
+        print '!!!!! Output to be sorted for avg degree centrality !!!!!'
+    if option['avg_closeness_centrality']<>False:
+        print '!!!!! Output to be sorted for avg closeness centrality !!!!!'
+    if option['diameter']<>False:
+        print '!!!!! Output to be sorted for diameter !!!!!'
     
 def txtout(outputfile,graphparameters, parameters,metrics):        
     '''Writes the results to a specified text file.
