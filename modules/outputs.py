@@ -464,6 +464,8 @@ def write_text_file(outputfile,CASCADING,basic,option):
         print '!!!!! Output to be sorted for avg betweenness centrality !!!!!'
     if option['assortativity_coefficient']<>False:
         print '!!!!! Output to be sorted for assortativity coefficient !!!!!'
+    if option['clustering_coefficient']<>False:
+        print '!!!!! Output to be sorted for clustering coefficient !!!!!'
     if option['transitivity']<>False:
         print '!!!!! Output to be sorted for transitivity !!!!!'
     if option['square_clustering']<>False:
