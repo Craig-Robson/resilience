@@ -372,7 +372,8 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             for g in nx.connected_component_subgraphs(Gtemp):
                 temp.append(g.number_of_nodes())
             option_metrics['size_of_components'].append(temp)
-
+        
+        if option_metrics['avg_size_of_components'] <> False: option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/float(len(nx.connected_component_subgraphs(Gtemp))))
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
         numofedges = Gtemp.number_of_edges()                      
@@ -387,7 +388,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['giant_component_size'] <> False: option_metrics['giant_component_size'].append(0)
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
-            if option_metrics['avg_size_of_components']<>False: option_metrics['avg_size_of_components']=0
+            #if option_metrics['avg_size_of_components']<>False: option_metrics['avg_size_of_components']=0
             basic_metrics['no_of_components'].append(nx.number_connected_components(Gtemp))
             basic_metrics['no_of_edges'].append(0)
             #set iterate as False so it stops after this time step
@@ -419,9 +420,9 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['giant_component_size'] <> False: 
                 #gets the size of the largest connected component
                 option_metrics['giant_component_size'].append((nx.connected_component_subgraphs(Gtemp)[0]).number_of_nodes()) #get the number of ndoes in the largest component
-            if option_metrics['avg_size_of_components'] <> False: option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/len(nx.connected_component_subgraphs(Gtemp)))  
+            #if option_metrics['avg_size_of_components'] <> False: option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/len(nx.connected_component_subgraphs(Gtemp)))
+            
             #add the number of edges to the respective list
-
             basic_metrics['no_of_edges'].append(Gtemp.number_of_edges())
                             
             if option_metrics['avg_degree'] <> False:       

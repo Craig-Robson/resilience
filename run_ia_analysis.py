@@ -170,8 +170,8 @@ basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes'
                    'no_of_edges':True,'no_of_components':True,
                    'no_of_isolated_nodes':True,'isolated_nodes_removed':True,}
 option_metrics_A = {'size_of_components':           True,
-                    'giant_component_size':         False,
-                    'avg_size_of_components':       False,
+                    'giant_component_size':         True,
+                    'avg_size_of_components':       True,
                     'isolated_nodes':               False,
                     'no_of_isolated_nodes_removed': False,
                     'subnodes':                     False,
