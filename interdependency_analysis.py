@@ -464,62 +464,88 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     i = 0
     #-------------------------basic metrics------------------------------------
     basicA['nodes_removed'] = [[]] #nodes removed from network A for any reason (fails, isolated, subgraphs)
-    basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
-    basicA['no_of_nodes'] = [GA.number_of_nodes()] #the number of nodes left in network A
-    basicA['number_of_edges'] = [GA.number_of_edges()] #number of edges in the network
-    basicA['number_of_components'] = [nx.number_connected_components(GA)] #number of subgraphs
     basicA['no_of_nodes_removed'] = [0]
+    basicA['no_of_nodes'] = [GA.number_of_nodes()] #the number of nodes left in network A
+    basicA['no_of_edges'] = [GA.number_of_edges()] #number of edges in the network
+    basicA['no_of_components'] = [nx.number_connected_components(GA)] #number of subgraphs
     basicA['no_of_isolated_nodes'] = [len(nx.isolates(GA))]
+    basicA['no_of_isolated_nodes_removed'] = [[]]
     
-    if failure['stand_alone'] <> True:    
-        basicB['nodes_removed'] = [[]] #nodes removed from network B
-        basicB['nodes_selected_to_fail'] = [[]]
-        basicB['no_of_nodes'] = [GB.number_of_nodes()] #the number of nodes left in network B
-        basicB['number_of_edges'] = [GB.number_of_edges()] #number of edges in the network
-        basicB['number_of_components'] = [nx.number_connected_components(GB)] #number of subgraphs
+    basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
+       
+    if failure['stand_alone'] <> True:
+        basicB['nodes_removed'] = [[]] #nodes removed from network A for any reason (fails, isolated, subgraphs)
         basicB['no_of_nodes_removed'] = [0]
-        basicB['no_of_isolated_nodes'] = [len(nx.isolates(GB))]  
+        basicB['no_of_nodes'] = [GB.number_of_nodes()] #the number of nodes left in network A
+        basicB['no_of_edges'] = [GB.number_of_edges()] #number of edges in the network
+        basicB['no_of_components'] = [nx.number_connected_components(GB)] #number of subgraphs
+        basicB['no_of_isolated_nodes'] = [len(nx.isolates(GB))]
+        basicB['no_of_isolated_nodes_removed'] = [[]]
         
+        
+    if optionA['size_of_components']==True:
+        print '!!!!! Need to finish this for the metric size of components!!!!!'
     if optionA['giant_component_size']==True:
         optionA['giant_component_size']=[(nx.connected_component_subgraphs(GA)[0]).number_of_nodes()]
-    if optionA['avg_nodes_in_components']==True:
-        optionA['avg_nodes_in_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(GA)))]
+    if optionA['avg_size_of_components']==True:
+        optionA['avg_size_of_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(GA)))]
     if optionA['isolated_nodes']==True:
         optionA['isolated_nodes']=[nx.isolates(GA)]
-    if handling_variables['remove_isolates'] == True or optionA['isolated_nodes_removed'] == True:
-        optionA['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step
     if handling_variables['remove_isolates'] == True or optionA['no_of_isolated_nodes_removed'] == True:
         optionA['no_of_isolated_nodes_removed']=[0]
     if handling_variables['remove_subgraphs']== True or optionA['subnodes']==True or optionA['no_of_subnodes']==True:
         optionA['subnodes']=[[]] #nodes removed as part of isolated graphs
         optionA['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
 
-    if optionA['path_length']==True:optionA['path_length']=[nx.average_shortest_path_length(GA)] 
-    if optionA['avg_path_length_of_components']==True or optionA['path_length_of_giant_component']==True:
+    if optionA['avg_path_length']==True:optionA['avg_path_length']=[nx.average_shortest_path_length(GA)] 
+    if optionA['avg_path_length_of_components']==True or optionA['avg_path_length_of_giant_component']==True:
         temp = []
         for g in nx.connected_component_subgraphs(GA):
             temp.append(nx.average_shortest_path_length(GA))
         if optionA['avg_path_length_of_components']== True:optionA['avg_path_length_of_components']=[temp]
-        if optionA['path_length_of_giant_component']==True:optionA['path_length_of_giant_component']=[temp[0]]
-    if optionA['path_length_geo']==True:
+        if optionA['avg_path_length_of_giant_component']==True:optionA['avg_path_length_of_giant_component']=[temp[0]]
+    if optionA['avg_geo_path_length']==True:
         #need to check that the edges have an attribute 'length'
         for edge in GA.edges(data=True):
             for edge in GA.edges(data=True):
                 for key in edge[2].keys():
                     if key == str(length):
-                        optionA['path_length_geo']=[nx.average_shortest_path_length(GA,length)]
+                        optionA['avg_geo_path_length']=[nx.average_shortest_path_length(GA,length)]
                         break
-                    else: optionA['path_length_geo']=[None]   
-                break     
+                    else: optionA['avg_geo_path_length']=[None]   
+                break
+            
     if optionA['avg_degree']==True:
         temp=0
         for node in GA:
             temp+=GA.degree(node)
         optionA['avg_degree']=[temp/GA.number_of_nodes()]
     if optionA['no_of_inter_removed']==True:optionA['no_of_inter_removed']=[0]
-    
     if optionA['density']==True:optionA['density']=[nx.density(GA)]
         
+    if optionA['maximum_betweenness_centrality']==True:        
+        print '!!!!! Need to sort max betweenness centrality metric!!!!!'        
+    if optionA['avg_betweenness_centrality']==True:
+        print '!!!!! Need to sort avg betweenness centrality metric!!!!!'
+    if optionA['assortativity_coefficient']==True:
+        print '!!!!! Need to sort assortativity coefficient metric!!!!!'
+    if optionA['clustering_coefficient']==True:
+        print '!!!!! Need to sort clustering coefficient metric!!!!!'
+    if optionA['transitivity']==True:
+        print '!!!!! Need to sort  transitivity metric!!!!!'
+    if optionA['square_clustering']==True:
+        print '!!!!! Need to sort square clustering metric!!!!!'
+    if optionA['avg_neighbor_connectivity']==True:
+        print '!!!!! Need to sort avg neighbor connectivity metric!!!!!'
+    if optionA['avg_degree_connectivity']==True:
+        print '!!!!! Need to sort avg degree connectivity metric!!!!!'
+    if optionA['avg_degree_centrality']==True:
+        print '!!!!! Need to sort avg degree centrality metric!!!!!'
+    if optionA['avg_closeness_centrality']==True:
+        print '!!!!! Need to sort avg closeness centrality metric!!!!!'
+    if optionA['diameter']==True:
+        print '!!!!! Need to sort diameter metric!!!!!'
+    
     if failure['stand_alone'] == False:
         if optionB['giant_component_size']==True:
             optionB['giant_component_size']=[(nx.connected_component_subgraphs(GB)[0]).number_of_nodes()]

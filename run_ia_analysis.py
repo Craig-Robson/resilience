@@ -167,22 +167,36 @@ else:
 
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,
-                   'number_of_edges':True,'number_of_components':True,
+                   'no_of_edges':True,'no_of_components':True,
                    'no_of_isolated_nodes':True,'isolated_nodes_removed':True,}
-option_metrics_A = {'size_of_components':False,
-                    'giant_component_size':False,
-                    'avg_nodes_in_components':False,
-                    'isolated_nodes':False,
-                    'no_of_isolated_nodes_removed':False,
-                    'subnodes':False,
-                    'no_of_subnodes':False,
-                    'path_length':False,
+option_metrics_A = {'size_of_components':           False,
+                    'giant_component_size':         False,
+                    'avg_size_of_components':       False,
+                    'isolated_nodes':               False,
+                    'no_of_isolated_nodes_removed': False,
+                    'subnodes':                     False,
+                    'no_of_subnodes':               False,
+                    'avg_path_length':              False,
                     'avg_path_length_of_components':False,
-                    'path_length_of_giant_component':False,
-                    'path_length_geo':False,
-                    'avg_degree':False,
-                    'no_of_inter_removed':False,
-                    'density':False}
+                    'avg_path_length_of_giant_component':   False,
+                    'avg_geo_path_length':                  False,
+                    'avg_geo_path_length_of_components':    False,
+                    'avg_geo_path_length_of_giant_component':False,
+                    'avg_degree':                   False,
+                    'no_of_inter_removed':          False,
+                    'density':                      False,
+                    'maximum_betweenness_centrality':False,
+                    'avg_betweenness_centrality':   False,
+                    'assortativity_coefficient':    False,
+                    'clustering_coefficient':       False,
+                    'transitivity':                 False,
+                    'square_clustering':            False,
+                    'avg_neighbor_connectivity':    False,
+                    'avg_degree_connectivity':      False,
+                    'avg_degree_centrality':        False,
+                    'avg_closeness_centrality':     False,
+                    'diameter':                     False
+                    }
 
 if failure['stand_alone'] == False:
     basic_metrics_B = basic_metrics_A.copy()
@@ -191,7 +205,7 @@ else: basic_metrics_B = None; option_metrics_B = None
 metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
 
 #------------------option to set the attribute which contins the length of the edges
-if option_metrics_A['path_length_geo'] <> False: length = 'shape_leng'
+if option_metrics_A['avg_geo_path_length'] <> False: length = 'shape_leng'
 else: length = None
 
 #------------------file names for csv based analysis-------------------------
