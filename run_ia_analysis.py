@@ -105,13 +105,13 @@ if mass == True:
     import network_data as network_data #does not currently work as no file path for it yet
 
 #------------------use lof file--------------------------------------------
-#logfilepath = 'C:/a8243587_DATA/GitRepo/_res_testing/logfile.txt'
-logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
+logfilepath = 'C:/a8243587_DATA/GitRepo/_res_testing/logfile.txt'
+#logfilepath = 'C:/Users/Craig/GitRepo/_res_testing/logfile.txt'
 
 #------------------path name for the result files--------------------------
 "when using analysing exisiting networks dont need name of outputfile here, just the location"
-#result_file = 'C:/a8243587_DATA/GitRepo/_res_testing/result.txt'
-result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
+result_file = 'C:/a8243587_DATA/GitRepo/_res_testing/result.txt'
+#result_file = 'C:/Users/Craig/GitRepo/_res_testing/result.txt' #for laptop
 
 #------------------path name for the input files---------------------------
 file_path = 'H:/robustness/csv_network_data/'
