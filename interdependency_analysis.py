@@ -291,6 +291,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         if handling_variables['remove_isolates']==True:
             if Gtemp.number_of_edges() <> 0:
                 Gtemp,node_list,basic_metrics,option_metrics,isolated_nodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(Gtemp,node_list,option_metrics,basic_metrics,to_b_nodes,from_a_nodes,a_to_b_edges,net)
+                #not too sure why I need separate things for net a and b??S
                 if net == 'B':         
                     if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
                     if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
@@ -298,8 +299,8 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+len(isolated_nodes))
                     basic_metrics['nodes_removed'].append(basic_metrics['nodes_removed'].pop()+option_metrics['isolated_nodes_removed'][i])
                 if net == 'A':
-                    print '!!!!!This needs looking at further!!!!!'
                     basic_metrics['isolated_nodes_removed'].append(isolated_nodes)
+                    if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
                     if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
             else:
                 if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append([])
@@ -320,6 +321,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             #if subgraphs are to be removed for the analysis ie. for infrastructure modelling
             if handling_variables['remove_subgraphs']==True:     
                 Gtemp, subn, nsubnodes, nodelists, edgelists = network_handling.handle_sub_graphs(nodelists, edgelists) 
+                print 'SUB N is:', subn
                 if option_metrics['subnodes'] <> False: option_metrics['subnodes'].append(subn)
                 basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+nsubnodes)
                 if option_metrics['no_of_subnodes'] <> False: option_metrics['no_of_subnodes'].append(nsubnodes)
@@ -348,8 +350,9 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                         temp2.append(temp[count])
                         no_of_subnodes+=(len(temp[count]))
                         count+=1
-                    option_metrics['subnodes'].insert(i,temp2)
-    
+                    print 'INSERTING', temp2
+                    option_metrics['subnodes'].append(temp2)
+                    #option_metrics['subnodes'].insert(i,temp2)
                     if option_metrics['no_of_subnodes']<>False:option_metrics['no_of_subnodes'].append(no_of_subnodes)
                 
                 #calcualte the averge path length if needed
