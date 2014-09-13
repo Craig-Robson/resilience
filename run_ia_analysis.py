@@ -85,7 +85,7 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
         raise error_classes.GeneralError('Error. The STAND_ALONE variable must have a boolean value')
 
 
-failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
+failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
         'random':False, 'degree':False, 'betweenness':True}
 
@@ -201,8 +201,8 @@ option_metrics_A = {'size_of_components':           False,
 if failure['stand_alone'] == False:
     basic_metrics_B = basic_metrics_A.copy()
     option_metrics_B = option_metrics_A.copy()
+    basic_metrics_B['nodes_selected_to_fail']=False
 else: basic_metrics_B = None; option_metrics_B = None
-basic_metrics_B['nodes_selected_to_fail']=False
 metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
 
 #------------------option to set the attribute which contins the length of the edges
