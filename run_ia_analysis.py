@@ -85,7 +85,7 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
         raise error_classes.GeneralError('Error. The STAND_ALONE variable must have a boolean value')
 
 
-failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
+failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
         'random':False, 'degree':False, 'betweenness':True}
 
