@@ -443,7 +443,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['avg_path_length'] <> False:
         outputfile.write('\naverage path length for whole graph,' + str(option['avg_path_length']))
     if option['avg_path_length_of_components'] <> False:
-        outputfile.write('\naverage path length for each component,' + str(tools.replace_all(str(option['avg_path_length_components']),{',':';','];':'],'})))
+        outputfile.write('\naverage path length for each component,' + str(tools.replace_all(str(option['avg_path_length_of_components']),{',':';','];':'],'})))
     if option['avg_path_length_of_giant_component'] <> False:
         outputfile.write('\naverage path length of giant component,' + str(option['avg_path_length_of_giant_component']))
     if option['avg_geo_path_length']<>False:

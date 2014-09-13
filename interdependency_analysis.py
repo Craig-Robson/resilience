@@ -350,14 +350,8 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                         temp2.append(temp[count])
                         no_of_subnodes+=(len(temp[count]))
                         count+=1
-                    print 'INSERTING', temp2
                     option_metrics['subnodes'].append(temp2)
-                    #option_metrics['subnodes'].insert(i,temp2)
                     if option_metrics['no_of_subnodes']<>False:option_metrics['no_of_subnodes'].append(no_of_subnodes)
-                
-                #calcualte the averge path length if needed
-                if option_metrics['avg_path_length'] <> False:
-                    option_metrics['avg_path_length'].append(network_handling.whole_graph_av_path_length(Gtemp))
             else:
                 #there is an error with the variable
                 raise error_classes.GeneralError('Error. Variable REMOVE_SUBGRAPHS must be set as True or False only.')
@@ -386,8 +380,9 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             i = -100
             #add values for the metrics which are not set as False
             if option_metrics['avg_path_length'] <> False: option_metrics['avg_path_length'].append(0.0)
-            if option_metrics['avg_geo_path_length'] <> False: option_metrics['avg_geo_path_length'].append(0.0)
+            if option_metrics['avg_path_length_of_components']<>False: option_metrics['avg_path_length_of_components'].append(0.0)
             if option_metrics['avg_path_length_of_giant_component']<> False: option_metrics['avg_path_length_of_giant_component'].append(0.0)
+            if option_metrics['avg_geo_path_length'] <> False: option_metrics['avg_geo_path_length'].append(0.0)
             if option_metrics['giant_component_size'] <> False: option_metrics['giant_component_size'].append(0)
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
@@ -404,6 +399,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 average = network_handling.whole_graph_av_path_length(Gtemp)
                 option_metrics['avg_path_length'].append(average)
                 Gtemp.graph['apl']=average
+                print '!!! Need to sort apl out!!!'
+                temp=[]
+                for g in nx.connected_component_subgraphs(Gtemp):
+                    temp.append(nx.average_shortest_path_length(g))
+                if option_metrics['avg_path_length_of_components']<>False:
+                    option_metrics['avg_path_length_of_components'].append(temp)
             if option_metrics['avg_geo_path_length']<>False:
                 length_att = False
                 for edge in Gtemp.edges(data=True):
