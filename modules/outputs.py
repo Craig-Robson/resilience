@@ -465,9 +465,9 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['assortativity_coefficient']<>False:
         outputfile.write('\nassortativity coefficient,' + str(option['assortativity_coefficient']))
     if option['clustering_coefficient']<>False:
-        print '!!!!! Output to be sorted for clustering coefficient !!!!!'
+        outputfile.write('\nclustering coefficient,' + str(option['clustering_coefficient']))
     if option['transitivity']<>False:
-        print '!!!!! Output to be sorted for transitivity !!!!!'
+        outputfile.write('\ntransitivity,' + str(option['transitivity']))
     if option['square_clustering']<>False:
         print '!!!!! Output to be sorted for square clustering !!!!!'
     if option['avg_neighbor_connectivity']<>False:

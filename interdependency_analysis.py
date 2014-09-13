@@ -382,6 +382,10 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 for val in temp.values():
                     avg+=val
                 option_metrics['avg_betweenness_centrality'].append(avg/len(temp))
+        if option_metrics['clustering_coefficient']<>False:
+            option_metrics['clustering_coefficient'].append(nx.average_clustering(Gtemp))
+        if option_metrics['transitivity']<>False:
+            option_metrics['transitivity'].append(nx.transitivity(Gtemp))
             
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
@@ -601,9 +605,9 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     if optionA['assortativity_coefficient']==True:
         optionA['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GA)]
     if optionA['clustering_coefficient']==True:
-        print '!!!!! Need to sort clustering coefficient metric!!!!!'
+        optionA['clustering_coefficient']=[nx.average_clustering(GA)]
     if optionA['transitivity']==True:
-        print '!!!!! Need to sort  transitivity metric!!!!!'
+        optionA['transitivity']=[nx.transitivity(GA)]
     if optionA['square_clustering']==True:
         print '!!!!! Need to sort square clustering metric!!!!!'
     if optionA['avg_neighbor_connectivity']==True:
