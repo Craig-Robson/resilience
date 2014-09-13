@@ -378,7 +378,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['maximum_betweenness_centrality']<>False:
                 option_metrics['maximum_betweenness_centrality'].append(max(temp.values()))
             if option_metrics['avg_betweenness_centrality']<>False:
-                avg=0
+                avg=0.0
                 for val in temp.values():
                     avg+=val
                 option_metrics['avg_betweenness_centrality'].append(avg/len(temp))
@@ -388,24 +388,28 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             option_metrics['transitivity'].append(nx.transitivity(Gtemp))
         if option_metrics['square_clustering']<>False:
             temp = nx.square_clustering(Gtemp)
-            avg=0
+            avg=0.0
             for val in temp.values():
                 avg+=val
             option_metrics['square_clustering'].append(avg/len(temp))
-            
         if option_metrics['avg_degree_connectivity'] <> False:
             temp = nx.average_degree_connectivity(Gtemp)
-            avg=0
+            avg=0.0
             for val in temp.values():
                 avg+=val
             option_metrics['avg_degree_connectivity'].append(avg/len(temp))        
         if option_metrics['avg_closeness_centrality'] <> False:
             temp = nx.closeness_centrality(Gtemp)
-            avg=0
+            avg=0.0
             for val in temp.values():
                 avg+=val
             option_metrics['avg_closeness_centrality'].append(avg/len(temp))
-        
+        if option_metrics['avg_neighbor_degree'] <> False:
+            temp = nx.average_neighbor_degree(Gtemp)
+            avg=0.0
+            for val in temp.values():
+                avg+=val
+            option_metrics['avg_neighbor_degree'].append(avg/len(temp))
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
         numofedges = Gtemp.number_of_edges()                      
@@ -616,10 +620,10 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                     else: optionA['avg_geo_path_length']=[None]   
                 break
     if optionA['avg_degree']==True:
-        temp=0
+        avg=0.0
         for node in GA:
-            temp+=GA.degree(node)
-        optionA['avg_degree']=[temp/GA.number_of_nodes()]
+            avg+=GA.degree(node)
+        optionA['avg_degree']=[avg/GA.number_of_nodes()]
     if optionA['no_of_inter_removed']==True:optionA['no_of_inter_removed']=[0]
     if optionA['density']==True:optionA['density']=[nx.density(GA)]
         
@@ -628,7 +632,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         if optionA['maximum_betweenness_centrality']<>False:
             optionA['maximum_betweenness_centrality']=[max(temp.values())]
         if optionA['avg_betweenness_centrality']<>False:
-            avg=0
+            avg=0.0
             for val in temp.values():
                 avg+=val
             optionA['avg_betweenness_centrality']=[avg/len(temp)]
@@ -640,31 +644,31 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         optionA['transitivity']=[nx.transitivity(GA)]
     if optionA['square_clustering']==True:
         temp = nx.square_clustering(GA)
-        avg=0
+        avg=0.0
         for val in temp.values():
             avg+=val
         optionA['square_clustering']=[avg/len(temp)]
-
-
-    if optionA['avg_neighbor_connectivity']==True:
-        print '!!!!! Need to sort avg neighbor connectivity metric!!!!!'
-        
-        
+    if optionA['avg_neighbor_degree']==True:
+        temp = nx.average_neighbor_degree(GA)
+        avg=0.0
+        for val in temp.values():
+            avg+=val
+        optionA['avg_neighbor_degree']=[avg/len(temp)]
     if optionA['avg_degree_connectivity']==True:
         temp = nx.average_degree_connectivity(GA)
-        avg=0
+        avg=0.0
         for val in temp.values():
             avg+=val
         optionA['avg_degree_connectivity']=[avg/len(temp)]
     if optionA['avg_degree_centrality']==True:
         temp = nx.degree_centrality(GA)
-        avg=0
+        avg=0.0
         for val in temp.values():
             avg+=val
         optionA['avg_degree_centrality']=[avg/len(temp)]
     if optionA['avg_closeness_centrality']==True:
         temp = nx.closeness_centrality(GA)
-        avg=0
+        avg=0.0
         for val in temp.values():
             avg+=val
         optionA['avg_closeness_centrality']=[avg/len(temp)]

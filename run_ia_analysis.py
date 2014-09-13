@@ -191,11 +191,11 @@ option_metrics_A = {'size_of_components':           False,
                     'clustering_coefficient':       False,
                     'transitivity':                 False,
                     'square_clustering':            False,
-                    'avg_neighbor_connectivity':    False, #to sort
+                    'avg_neighbor_degree':          False,
                     'avg_degree_connectivity':      False,
                     'avg_degree_centrality':        False,
-                    'avg_closeness_centrality':     True,
-                    'diameter':                     True
+                    'avg_closeness_centrality':     False,
+                    'diameter':                     False
                     }
 
 if failure['stand_alone'] == False:

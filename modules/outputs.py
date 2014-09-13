@@ -470,8 +470,8 @@ def write_text_file(outputfile,CASCADING,basic,option):
         outputfile.write('\ntransitivity,' + str(option['transitivity']))
     if option['square_clustering']<>False:
         outputfile.write('\nsquare clustering,' + str(option['square_clustering']))
-    if option['avg_neighbor_connectivity']<>False:
-        print '!!!!! Output to be sorted for avg neighbor connectivity !!!!!'
+    if option['avg_neighbor_degree']<>False:
+        outputfile.write('\naverage neighbor degree,' + str(option['avg_neighbor_degree']))
     if option['avg_degree_connectivity']<>False:
         outputfile.write('\naverage degree connectivity,' + str(option['avg_degree_connectivity']))
     if option['avg_degree_centrality']<>False:
