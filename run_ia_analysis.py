@@ -93,7 +93,7 @@ failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
 #REMOVE_SUBGRAPHS: When subgraphs appear, delete from network
 #REMOVE_ISOLATES: When isolated nodes appear, delete from network
 #NO_ISOLATES: Allow isolated nodes to be removed in the selection methods
-handling_variables = {'remove_subgraphs':False,'remove_isolates':True,'no_isolates':False}  
+handling_variables = {'remove_subgraphs':True,'remove_isolates':True,'no_isolates':False}  
 
 #------------------setting of data input type------------------------------
 use_nx_single = True
@@ -173,10 +173,10 @@ basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes'
 option_metrics_A = {'size_of_components':           False,
                     'giant_component_size':         False,
                     'avg_size_of_components':       False,
-                    'isolated_nodes':               False,
-                    'no_of_isolated_nodes_removed': False,
-                    'subnodes':                     False,
-                    'no_of_subnodes':               False,
+                    'isolated_nodes':               True,
+                    'no_of_isolated_nodes_removed': True,
+                    'subnodes':                     True,
+                    'no_of_subnodes':               True,
                     'avg_path_length':              False,
                     'avg_path_length_of_components':False,
                     'avg_path_length_of_giant_component':   False,

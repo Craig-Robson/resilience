@@ -322,18 +322,23 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             nodelists = Gtemp.nodes()
             edgelists = Gtemp.edges()
             #if subgraphs are to be removed for the analysis ie. for infrastructure modelling
-            if handling_variables['remove_subgraphs']==True:     
-                Gtemp, subn, nsubnodes, nodelists, edgelists = network_handling.handle_sub_graphs(nodelists, edgelists) 
-                print 'SUB N is:', subn
-                if option_metrics['subnodes'] <> False: option_metrics['subnodes'].append(subn)
+            if handling_variables['remove_subgraphs']==True:
+                #remove subgraphs and record the details of them
+                Gtemp, subnodes, nsubnodes, nodelists, edgelists = network_handling.handle_sub_graphs(Gtemp) 
+                if option_metrics['subnodes'] <> False: option_metrics['subnodes'].append(subnodes)
                 basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+nsubnodes)
                 if option_metrics['no_of_subnodes'] <> False: option_metrics['no_of_subnodes'].append(nsubnodes)
                 
-                basic_metrics['nodes_removed'].append(basic_metrics['nodes_removed'].pop()+option_metrics['subnodes'][i+1])
-                node_list, to_b_nodes, from_a_nodes =  network_handling.clean_node_lists(subn,node_list,to_b_nodes,from_a_nodes)
+                nodes_removed = basic_metrics['nodes_removed'].pop()
+                for subgraph in subnodes: 
+                    for nd in subgraph: 
+                        nodes_removed.append(nd)
+                basic_metrics['nodes_removed'].append(nodes_removed)
+                
+                node_list, to_b_nodes, from_a_nodes =  network_handling.clean_node_lists(subnodes,node_list,to_b_nodes,from_a_nodes)
                 
                 temp = nx.connected_component_subgraphs(Gtemp)
-                basic_metrics['number_of_components'].append(len(temp))
+                basic_metrics['no_of_components'].append(len(temp))
                 
             #if subgraphs are to be left as part of the network 
             elif handling_variables['remove_subgraphs']==False:

@@ -79,41 +79,25 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
     #print 'RUNNING REMOVE_ISOLATES FROM',net,'. Number of ISOLATES removed:',len(isolatednodes),'(',isolatednodes,');','Dependency edges removed:', tot
     return G,node_list,basic,option,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges
     
-def handle_sub_graphs(nodelists, edgelists):
+def handle_sub_graphs(G):
     ''''Used for removing subgraphs from a network, but converting them to 
     node and edge lists so can be re-built for analysis purposes. Called from 
     analysis_B'''
     
-    #build network from node and edge lists,identify any new subgraphs, and store all graphs as node and edge lists
-    G = nx.Graph()
-    G.add_nodes_from(nodelists)    
-    G.add_edges_from(edgelists)
     subgraphlist = nx.connected_component_subgraphs(G) #create a list of subgraphs
 
-    subnodesinA = [] #list of subnodes
+    subnodes = [] #list of subnodes
     numofsubnodes = 0 #to store the number of subnodes in total at each iteration
-    newedgelist = [] #new list to store the edges for each subgraph
-    newnodelist = [] #new list to store the nodes for each subgraph
 
     i = 0    
-    #for all nodes in the subgraph list, update the output lists
-    while i < len(subgraphlist): 
-        subgraph = subgraphlist[i]
-        newnodelist.append(subgraph.nodes()) 
-        newedgelist.append(subgraph.edges()) 
-        subnodesinA.append(subgraph.nodes())
-        numofsubnodes += subgraph.number_of_nodes() #add up the number of nodes in the subgrahs during this wider iteration
-        i += 1
-    
-    return G, subnodesinA, numofsubnodes,newnodelist,newedgelist
+    for g in subgraphlist:
+        if i <> 0:
+            subnodes.append(g.nodes())
+            numofsubnodes+=g.number_of_nodes()
+        i+=1
+    G = subgraphlist[0]
 
-#to change the handling of subgraphs:
-#use lists to store node and edge lists, then build each network as required- means it will run much slower I believe
-#for the sub graph function - identify sub graphs and add the node and egde lists to two new lists - list must be re-created on each analysis iteration to keep everything up to date
-#instead of passing the single network(G), need to pass the two lists to all functions
-#for all other functions loop thorugh them to go thrugh the lists of graphs - easier than trying to create and handle multiple networks at once
-#also need to add the new outputs - average across all subgraphs,average for each subgraph, size of each subgraph - to be confirmed by Stuart
-
+    return G, subnodes, numofsubnodes, G.nodes(),G.edges()
 
 '''interdependency function'''
 def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges,temp,INTERDEPENDENCY): 
