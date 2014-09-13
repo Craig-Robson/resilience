@@ -463,7 +463,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['avg_betweenness_centrality']<>False:
         outputfile.write('\naverage betweenness centrality of nodes,' + str(option['avg_betweenness_centrality']))
     if option['assortativity_coefficient']<>False:
-        print '!!!!! Output to be sorted for assortativity coefficient !!!!!'
+        outputfile.write('\nassortativity coefficient,' + str(option['assortativity_coefficient']))
     if option['clustering_coefficient']<>False:
         print '!!!!! Output to be sorted for clustering coefficient !!!!!'
     if option['transitivity']<>False:

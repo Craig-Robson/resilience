@@ -382,11 +382,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 for val in temp.values():
                     avg+=val
                 option_metrics['avg_betweenness_centrality'].append(avg/len(temp))
-                
+            
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
         numofedges = Gtemp.number_of_edges()                      
         #------------if there are no edges left--------------------------------
+        
         if numofedges == 0: 
             #set i really high so iteraion stops at the end of this step
             i = -100
@@ -400,12 +401,13 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['giant_component_size'] <> False: option_metrics['giant_component_size'].append(0)
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
+            if option_metrics['assortativity_coefficient']<>False:option_metrics['assortativity_coefficient'].append(0.0)
             #if option_metrics['avg_size_of_components']<>False: option_metrics['avg_size_of_components']=0
             basic_metrics['no_of_components'].append(nx.number_connected_components(Gtemp))
             basic_metrics['no_of_edges'].append(0)
             #set iterate as False so it stops after this time step
             iterate = False
-            
+
         #------------if the number of edge is greater than zero----------------
         elif numofedges <> 0:
             #---------------average path length calculations-------------------
@@ -477,7 +479,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 option_metrics['avg_degree'].append(sumh/(Gtemp.number_of_nodes()))
                 Gtemp.graph['average_degree']=sumh/Gtemp.number_of_nodes()
             if option_metrics['density']<>False:option_metrics['density'].append(nx.density(Gtemp))
-            
+
+            if option_metrics['assortativity_coefficient']<>False:
+                temp = nx.degree_assortativity_coefficient(Gtemp)
+                if str(temp) == 'nan': temp = 0.0
+                option_metrics['assortativity_coefficient'].append(temp)
+
             if store_n_e_atts: Gtemp = node_edge_atts(Gtemp)
         
         #add the number of nodes left to the respective list
@@ -592,7 +599,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
             optionA['avg_betweenness_centrality']=[avg/len(temp)]
             
     if optionA['assortativity_coefficient']==True:
-        print '!!!!! Need to sort assortativity coefficient metric!!!!!'
+        optionA['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GA)]
     if optionA['clustering_coefficient']==True:
         print '!!!!! Need to sort clustering coefficient metric!!!!!'
     if optionA['transitivity']==True:
