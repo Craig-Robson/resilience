@@ -457,7 +457,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['no_of_inter_removed']<>False:
         print '!!!!! Output to be sorted for no of inter removed !!!!!'
     if option['density']<>False:
-        print '!!!!! Output to be sorted for density !!!!!'
+        outputfile.write('\ndensity,' + str(option['density']))
     if option['maximum_betweenness_centrality']<>False:
         print '!!!!! Output to be sorted for max betweenness centrality !!!!!'
     if option['avg_betweenness_centrality']<>False:
