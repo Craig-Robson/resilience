@@ -383,6 +383,8 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['avg_path_length_of_components']<>False: option_metrics['avg_path_length_of_components'].append(0.0)
             if option_metrics['avg_path_length_of_giant_component']<> False: option_metrics['avg_path_length_of_giant_component'].append(0.0)
             if option_metrics['avg_geo_path_length'] <> False: option_metrics['avg_geo_path_length'].append(0.0)
+            if option_metrics['avg_geo_path_length_of_components']<>False:option_metrics['avg_geo_path_length_of_components'].append(0.0)
+            if option_metrics['avg_geo_path_length_of_giant_component']<>False:option_metrics['avg_geo_path_length_of_giant_component'].append(0.0)
             if option_metrics['giant_component_size'] <> False: option_metrics['giant_component_size'].append(0)
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
@@ -394,37 +396,63 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             
         #------------if the number of edge is greater than zero----------------
         elif numofedges <> 0:
-            if option_metrics['avg_path_length'] <> False:
+            #---------------average path length calculations-------------------
+            if option_metrics['avg_path_length'] <> False or option_metrics['avg_path_length_of_components']<>False:
                 #claculates the average path length of the whole network if not dissconnected
-                average = network_handling.whole_graph_av_path_length(Gtemp)
-                option_metrics['avg_path_length'].append(average)
-                Gtemp.graph['apl']=average
-                print '!!! Need to sort apl out!!!'
+                #average = network_handling.whole_graph_av_path_length(Gtemp)
                 temp=[]
                 for g in nx.connected_component_subgraphs(Gtemp):
                     temp.append(nx.average_shortest_path_length(g))
+                if option_metrics['avg_path_length']<>False:
+                    avg = 0
+                    for dist in temp:
+                        avg+= dist
+                    option_metrics['avg_path_length'].append(avg/len(temp))
                 if option_metrics['avg_path_length_of_components']<>False:
                     option_metrics['avg_path_length_of_components'].append(temp)
-            if option_metrics['avg_geo_path_length']<>False:
-                length_att = False
+            
+            if option_metrics['avg_path_length_of_giant_component'] <> False and option_metrics['avg_path_length']<>False:
+                option_metrics['avg_path_length_of_giant_component'].append(temp[0])
+            elif option_metrics['avg_path_length_of_giant_component']<>False:
+                av_len = nx.average_shortest_path_length(nx.connected_component_subgraphs(Gtemp)[0])
+                option_metrics['avg_path_length_of_giant_component'].append(av_len)        
+            
+            length_att = False
+            if option_metrics['avg_geo_path_length']<>False or option_metrics['avg_geo_path_length_of_components']<>False:
                 for edge in Gtemp.edges(data=True):
                     for key in edge[2].keys():
                         if key == str(length):
                             length_att = True
                             break
-                    if length_att == True:option_metrics['avg_geo_path_length'].append(network_handling.whole_graph_av_path_length(Gtemp,length))
-                    else:option_metrics['avg_geo_path_length'].append(None)
-                    break
-            if option_metrics['avg_path_length_of_giant_component'] <> False:
-                #gets a lists of the connected components
-                gbig = nx.connected_component_subgraphs(Gtemp)
-                #gets the average path length in the largest connected component
-                av_len = nx.average_shortest_path_length(gbig[0])
-                option_metrics['avg_path_length_of_giant_component'].append(av_len)
+                if length_att == True:
+                    temp=[]
+                    for g in nx.connected_component_subgraphs(Gtemp):
+                        temp.append(nx.average_shortest_path_length(g,length_att))
+                    if option_metrics['avg_geo_path_length']<>False:
+                        avg = 0
+                        for dist in temp:
+                            avg+= dist
+                        option_metrics['avg_geo_path_length'].append(avg/len(temp))
+                    if option_metrics['avg_geo_path_length_of_components']<>False:
+                        option_metrics['avg_geo_path_length_of_components'].append(temp)
+                else:
+                    if option_metrics['avg_geo_path_length']<>False:
+                        option_metrics['avg_geo_path_length'].append(None)
+                    if option_metrics['avg_geo_path_length_of_components']<>False:
+                        option_metrics['avg_geo_path_length_of_components'].append(None)
+            
+            if option_metrics['avg_geo_path_length_of_giant_component'] <> False and option_metrics['avg_geo_path_length']<>False:
+                option_metrics['avg_geo_path_length_of_giant_component'].append(temp[0])
+            elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == True:
+                av_len = nx.average_shortest_path_length(nx.connected_component_subgraphs(Gtemp)[0],length_att)
+                option_metrics['avg_geo_path_length_of_giant_component'].append(av_len)
+            elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == False:
+                option_metrics['avg_geo_path_length_of_giant_component'].append(None)
+                
+            #-------------------other calculations-----------------------------
             if option_metrics['giant_component_size'] <> False: 
                 #gets the size of the largest connected component
                 option_metrics['giant_component_size'].append((nx.connected_component_subgraphs(Gtemp)[0]).number_of_nodes()) #get the number of ndoes in the largest component
-            #if option_metrics['avg_size_of_components'] <> False: option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/len(nx.connected_component_subgraphs(Gtemp)))
             
             #add the number of edges to the respective list
             basic_metrics['no_of_edges'].append(Gtemp.number_of_edges())
