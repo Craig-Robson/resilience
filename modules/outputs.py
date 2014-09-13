@@ -437,9 +437,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['no_of_isolated_nodes_removed'] <> False:
         outputfile.write('\nnumber of isolated nodes removed,' + str(option['no_of_isolated_nodes_removed']))
     if option['subnodes'] <> False:
-        print '!!!!! Need to write code which replaces the commas inbetween lists with semi colons!!!!!'
-        outputfile.write('\nsubgraph nodes,' + str(tools.replace_all(str(option['subnodes']), {',':';','];':'],'})))
-        #outputfile.write('\nsubnodes,' + str(tools.replace_all(str(tools.replace_all(str(option['subnodes']) , {',':';',']];':']],'})),{'[];':','})))
+        outputfile.write('\nsubgraph nodes,' + str(tools.replace_all(str(tools.replace_all(str(option['subnodes']) , {',':';',']];':']],'})),{'[];':'[],'})))
     if option['no_of_subnodes'] <> False:
         outputfile.write('\nnumber of subnodes,' + str(option['no_of_subnodes']))  
     if option['avg_path_length'] <> False:
