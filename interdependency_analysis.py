@@ -392,6 +392,14 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             for val in temp.values():
                 avg+=val
             option_metrics['square_clustering'].append(avg/len(temp))
+            
+        if option_metrics['avg_degree_connectivity'] <> False:
+            temp = nx.average_degree_connectivity(Gtemp)
+            avg=0
+            for val in temp.values():
+                avg+=val
+            option_metrics['avg_degree_connectivity'].append(avg/len(temp))        
+        
         
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
@@ -412,6 +420,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
             if option_metrics['assortativity_coefficient']<>False:option_metrics['assortativity_coefficient'].append(0.0)
+            if option_metrics['avg_degree_centrality']<>False:option_metrics['avg_degree_centrality'].append(0.0)
             #if option_metrics['avg_size_of_components']<>False: option_metrics['avg_size_of_components']=0
             basic_metrics['no_of_components'].append(nx.number_connected_components(Gtemp))
             basic_metrics['no_of_edges'].append(0)
@@ -494,6 +503,13 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 temp = nx.degree_assortativity_coefficient(Gtemp)
                 if str(temp) == 'nan': temp = 0.0
                 option_metrics['assortativity_coefficient'].append(temp)
+            
+            if option_metrics['avg_degree_centrality']<>False:
+                temp = nx.degree_centrality(Gtemp)
+                avg=0
+                for val in temp.values():
+                    avg+=val
+                option_metrics['avg_degree_centrality'].append(avg/len(temp))
 
             if store_n_e_atts: Gtemp = node_edge_atts(Gtemp)
         
@@ -620,12 +636,25 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         for val in temp.values():
             avg+=val
         optionA['square_clustering']=[avg/len(temp)]
+
+
     if optionA['avg_neighbor_connectivity']==True:
         print '!!!!! Need to sort avg neighbor connectivity metric!!!!!'
+        
+        
     if optionA['avg_degree_connectivity']==True:
-        print '!!!!! Need to sort avg degree connectivity metric!!!!!'
+        temp = nx.average_degree_connectivity(GA)
+        avg=0
+        for val in temp.values():
+            avg+=val
+        optionA['avg_degree_connectivity']=[avg/len(temp)]
     if optionA['avg_degree_centrality']==True:
-        print '!!!!! Need to sort avg degree centrality metric!!!!!'
+        temp = nx.degree_centrality(GA)
+        avg=0
+        for val in temp.values():
+            avg+=val
+        optionA['avg_degree_centrality']=[avg/len(temp)]
+
     if optionA['avg_closeness_centrality']==True:
         print '!!!!! Need to sort avg closeness centrality metric!!!!!'
     if optionA['diameter']==True:

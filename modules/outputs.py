@@ -473,9 +473,9 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['avg_neighbor_connectivity']<>False:
         print '!!!!! Output to be sorted for avg neighbor connectivity !!!!!'
     if option['avg_degree_connectivity']<>False:
-        print '!!!!! Output to be sorted for avg degree connectivity !!!!!'
+        outputfile.write('\naverage degree connectivity,' + str(option['avg_degree_connectivity']))
     if option['avg_degree_centrality']<>False:
-        print '!!!!! Output to be sorted for avg degree centrality !!!!!'
+        outputfile.write('\naverage degree centrality,' + str(option['avg_degree_centrality']))
     if option['avg_closeness_centrality']<>False:
         print '!!!!! Output to be sorted for avg closeness centrality !!!!!'
     if option['diameter']<>False:
