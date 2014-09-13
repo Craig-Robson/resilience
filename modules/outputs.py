@@ -469,7 +469,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['transitivity']<>False:
         outputfile.write('\ntransitivity,' + str(option['transitivity']))
     if option['square_clustering']<>False:
-        print '!!!!! Output to be sorted for square clustering !!!!!'
+        outputfile.write('\nsquare clustering,' + str(option['square_clustering']))
     if option['avg_neighbor_connectivity']<>False:
         print '!!!!! Output to be sorted for avg neighbor connectivity !!!!!'
     if option['avg_degree_connectivity']<>False:
