@@ -12,78 +12,13 @@ import ogr, sys
 #import resilience module
 import interdependency_analysis as ia
 
-#import nx_pgnet module
-sys.path.append("C:/a8243587_DATA/GitRepo/nx_pgnet")
-sys.path.append("C:/Users/Craig/GitRepo/nx_pgnet")
-import nx_pgnet
+#nx_pgnet module location
+nx_pgnet_location = "C:/a8243587_DATA/GitRepo/nx_pgnet"
+nx_pgnet_location = "C:/Users/Craig/GitRepo/nx_pgnet"
 
 #import subsidiary resilience modules
 sys.path.append("C:/a8243587_DATA/GitRepo/resilience/resilience_modules")
 import tools, error_classes
-
-def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath):
-    ''''''
-    #unpack varaibles
-    metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
-
-    #if performing analysis on one network only    
-    if failure['stand_alone'] == True:
-        count = 0
-        #loop through the listed networks
-        for nets in NETWORK_NAME:
-            if db=='theoretic_networks_tree' or db=='theoretic_networks_hc' or db=='theoretic_networks_hr' or db=='theoretic_networks_ahr' or db=='theoretic_networks_ba'or db=='theoretic_networks_ws' or db=='theoretic_networks_gnm' or db=='theoretic_networks_er':
-                nets = str(nets)+'_'+str(count)
-                count += 1
-            iterations = 0
-            #while noia(the number of simulation to perform) is greater then the number performed
-            while iterations < noioa:
-                #if the network is to be got from the database
-                if use_db == True: 
-                    #connect to the database and get the network
-                    conn = ogr.Open(conn)
-                    G = nx_pgnet.read(conn).pgnet(nets)
-                #the network must come from a csv
-                else:
-                    #get the text file
-                    # maybe replace file_path with fileName1
-                    filepath = str(file_path)+'%s/%s.txt' %(db, nets)
-                    nodelist, edgelist = tools.get_nodes_edges_csv(filepath)
-                    #build the network from the lists returned from the function
-                    G = nx.Graph()
-                    G.add_nodes_from(nodelist)
-                    G.add_edges_from(edgelist)
-                #set the name of the results text file
-                fileName = str(fileName)+'%s/%s%s.txt'%(db,nets,failuretype)
-                #package the parameters together
-                parameters = metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
-                #need a value for network B (G2)
-                G2 = None
-                #perform the analusis
-                ia.main(G, G2, parameters, logfilepath)
-                iterations += 1
-                
-    #if dependency or intersedpendcy
-    elif failure['stand_alone'] == False:
-        if use_db == True:
-            conn = ogr.Open(conn)
-            G = nx_pgnet.read(conn).pgnet(nets)
-            raise error_classes.GeneralError('Error. This function does not work as yet.')
-        elif use_db == False:
-            #get both networks from csv
-            filepath = str(file_path)+'%s/%s.txt' %(db, NETWORK_NAME[0])
-            nodelist, edgelist = tools.get_nodes_edges_csv(filepath)
-            G1 = nx.Graph()
-            G1.add_nodes_from(nodelist)
-            G1.add_edges_from(edgelist)
-            filepath = str(file_path)+'%s/%s.txt' %(db, NETWORK_NAME[1])
-            nodelist, edgelist = tools.get_nodes_edges_csv(filepath)
-            G2 = nx.Graph()
-            G2.add_nodes_from(nodelist)
-            G2.add_edges_from(edgelist)
-        ia.main(G1, G2, parameters,logfilepath)
-    else:
-        raise error_classes.GeneralError('Error. The STAND_ALONE variable must have a boolean value')
-
 
 failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
@@ -211,8 +146,11 @@ else: length = None
 
 #------------------file names for csv based analysis-------------------------
 file_1_name = 'dependencey_test_n1'
-file_2_name = 'dependencey_test_n2'   
+file_2_name = 'dependencey_test_n2'
 
+
+#-----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #------------------run some checks-----------------------------------------
 if failure['interdependency']==True: print 'This functionality is not currently available.'; exit()
 if failure['cascading']==True: print 'WARNING! This functionality has not been tested fully yet.'
@@ -231,7 +169,7 @@ elif use_csv == True:
 elif use_db == True:
     parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     complete = ia.main(GA, GB, parameters,logfilepath)
-elif mass == True and failure['stand_alone'] == True: #for mass single analysis
+elif mass == True and failure['stand_alone'] == True: #for mass single analysis 
     print 'where mass = True and Stand_alone = true'
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
     '''select which network types to analyse'''
@@ -246,59 +184,59 @@ elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     if air== True:
         db = 'air'
         NETWORK_NAME, conn = network_data.air_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if lightrail == True:
         db = 'lightrail'
         NETWORK_NAME, conn = network_data.lightrail_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if roads_national == True:
         db = 'roads_national'
         NETWORK_NAME, conn = network_data.road_national_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)       
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)  
     if roads_regional== True:
         db = 'roads_regional'
         NETWORK_NAME, conn = network_data.road_regional_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if other== True:
         db = 'other'
         NETWORK_NAME, conn = network_data.other_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if infrastructure== True:
         db = 'infrastructure'
         NETWORK_NAME, conn = network_data.infra_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)            
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)            
     if er == True:
         db = 'er'
         NETWORK_NAME,conn = network_data.er_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if gnm == True:
         db = 'gnm'
         NETWORK_NAME, conn = network_data.gnm_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if ws == True:
         db = 'ws'
         NETWORK_NAME, conn = network_data.ws_networks()        
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if ba == True:
         db = 'ba'
         NETWORK_NAME, conn = network_data.ba_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if hra == True:
         db = 'hra'
         NETWORK_NAME, conn = network_data.hra_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if hr == True:
         db = 'hr'
         NETWORK_NAME, conn = network_data.hr_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if hc == True:
         db = 'hc'
         NETWORK_NAME, conn = network_data.hc_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     if tree == True:
         db = 'theoretic_networks_tree'
         NETWORK_NAME, conn = network_data.tree_networks()
-        analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath)
+        tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     else:
         print 'no networks selected'
 else:
