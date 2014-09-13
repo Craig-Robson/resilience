@@ -370,7 +370,19 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 temp.append(g.number_of_nodes())
             option_metrics['size_of_components'].append(temp)
         
-        if option_metrics['avg_size_of_components'] <> False: option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/float(len(nx.connected_component_subgraphs(Gtemp))))
+        if option_metrics['avg_size_of_components'] <> False:
+            option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/float(len(nx.connected_component_subgraphs(Gtemp))))
+        
+        if option_metrics['maximum_betweenness_centrality']<>False or option_metrics['avg_betweenness_centrality']<>False:
+            temp = nx.betweenness_centrality(Gtemp)
+            if option_metrics['maximum_betweenness_centrality']<>False:
+                option_metrics['maximum_betweenness_centrality'].append(max(temp.values()))
+            if option_metrics['avg_betweenness_centrality']<>False:
+                avg=0
+                for val in temp.values():
+                    avg+=val
+                option_metrics['avg_betweenness_centrality'].append(avg/len(temp))
+                
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
         numofedges = Gtemp.number_of_edges()                      
@@ -569,10 +581,16 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     if optionA['no_of_inter_removed']==True:optionA['no_of_inter_removed']=[0]
     if optionA['density']==True:optionA['density']=[nx.density(GA)]
         
-    if optionA['maximum_betweenness_centrality']==True:        
-        print '!!!!! Need to sort max betweenness centrality metric!!!!!'        
-    if optionA['avg_betweenness_centrality']==True:
-        print '!!!!! Need to sort avg betweenness centrality metric!!!!!'
+    if optionA['maximum_betweenness_centrality']==True or optionA['avg_betweenness_centrality']==True:
+        temp = nx.betweenness_centrality(GA)
+        if optionA['maximum_betweenness_centrality']<>False:
+            optionA['maximum_betweenness_centrality']=[max(temp.values())]
+        if optionA['avg_betweenness_centrality']<>False:
+            avg=0
+            for val in temp.values():
+                avg+=val
+            optionA['avg_betweenness_centrality']=[avg/len(temp)]
+            
     if optionA['assortativity_coefficient']==True:
         print '!!!!! Need to sort assortativity coefficient metric!!!!!'
     if optionA['clustering_coefficient']==True:

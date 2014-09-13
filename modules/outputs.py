@@ -459,9 +459,9 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['density']<>False:
         outputfile.write('\ndensity,' + str(option['density']))
     if option['maximum_betweenness_centrality']<>False:
-        print '!!!!! Output to be sorted for max betweenness centrality !!!!!'
+        outputfile.write('\nmaximum betweenness centrality,' + str(option['maximum_betweenness_centrality']))
     if option['avg_betweenness_centrality']<>False:
-        print '!!!!! Output to be sorted for avg betweenness centrality !!!!!'
+        outputfile.write('\naverage betweenness centrality of nodes,' + str(option['avg_betweenness_centrality']))
     if option['assortativity_coefficient']<>False:
         print '!!!!! Output to be sorted for assortativity coefficient !!!!!'
     if option['clustering_coefficient']<>False:
