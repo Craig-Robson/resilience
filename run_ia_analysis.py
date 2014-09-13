@@ -7,7 +7,7 @@ Created on Wed Apr 02 08:23:20 2014
 """
 #import python modules
 import networkx as nx
-import ogr, sys
+import sys
 
 #import resilience module
 import interdependency_analysis as ia
@@ -18,7 +18,7 @@ nx_pgnet_location = "C:/Users/Craig/GitRepo/nx_pgnet"
 
 #import subsidiary resilience modules
 sys.path.append("C:/a8243587_DATA/GitRepo/resilience/resilience_modules")
-import tools, error_classes
+import tools
 
 failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
@@ -108,10 +108,10 @@ basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes'
 option_metrics_A = {'size_of_components':           False,
                     'giant_component_size':         False,
                     'avg_size_of_components':       False,
-                    'isolated_nodes':               True,
-                    'no_of_isolated_nodes_removed': True,
-                    'subnodes':                     True,
-                    'no_of_subnodes':               True,
+                    'isolated_nodes':               False,
+                    'no_of_isolated_nodes_removed': False,
+                    'subnodes':                     False,
+                    'no_of_subnodes':               False,
                     'avg_path_length':              False,
                     'avg_path_length_of_components':False,
                     'avg_path_length_of_giant_component':   False,
