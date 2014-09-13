@@ -85,7 +85,7 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
         raise error_classes.GeneralError('Error. The STAND_ALONE variable must have a boolean value')
 
 
-failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
+failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
         'random':False, 'degree':False, 'betweenness':True}
 
@@ -168,7 +168,8 @@ else:
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,
                    'no_of_edges':True,'no_of_components':True,
-                   'no_of_isolated_nodes':True,'isolated_nodes_removed':True,}
+                   'no_of_isolated_nodes':True,'isolated_nodes_removed':True,
+                   'nodes_selected_to_fail':True}
 option_metrics_A = {'size_of_components':           False,
                     'giant_component_size':         False,
                     'avg_size_of_components':       False,
@@ -183,7 +184,6 @@ option_metrics_A = {'size_of_components':           False,
                     'avg_geo_path_length_of_components':    False,
                     'avg_geo_path_length_of_giant_component':False,
                     'avg_degree':                   False,
-                    'no_of_inter_removed':          False,
                     'density':                      False,
                     'maximum_betweenness_centrality':False,
                     'avg_betweenness_centrality':   False,
@@ -202,6 +202,7 @@ if failure['stand_alone'] == False:
     basic_metrics_B = basic_metrics_A.copy()
     option_metrics_B = option_metrics_A.copy()
 else: basic_metrics_B = None; option_metrics_B = None
+basic_metrics_B['nodes_selected_to_fail']=False
 metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
 
 #------------------option to set the attribute which contins the length of the edges

@@ -111,7 +111,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     '''
     #----------------unpack all the data containers----------------------------
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
-    basicA,basicB,optionA,optionB,interdependency,cascading = metrics
+    basicA,basicB,optionA,optionB,dependency,cascading = metrics
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     GA, GB, GtempA, GtempB = networks
     
@@ -200,7 +200,6 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     elif failure['dependency'] and failure['stand_alone']==False and failure['interdependency']==False:
         '''
         '''
-        basicB['nodes_selected_to_fail'].append([])
         #special one for cascading as loop needed to handle multiple network A nodes being removed in one iteration
         #to store all nodes for intire iteration which are removed from networkB due to broken dependence link
         temp = []
@@ -216,15 +215,18 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         else:
             if GtempA.number_of_edges()>0:
                 #check for isolates if requested and subgraphs
+                '''
                 if handling_variables['remove_isolates']==True:
                     GtempA,node_list,basicA,optionA,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(GtempA,node_list,optionA,basicA,to_b_nodes,from_a_nodes,a_to_b_edges,net='A')
-                    optionA['isolated_nodes'].append(isolatednodes)
-                    optionA['no_of_isolated_nodes_removed'].append(len(isolatednodes))
-                    optionA['isolated_nodes_removed'].append(isolatednodes)
+                    if optionA['isolated_nodes'] <> False: optionA['isolated_nodes'].append(isolatednodes)
+                    if optionA['no_of_isolated_nodes_removed'] <> False: optionA['no_of_isolated_nodes_removed'].append(len(isolatednodes))
+                    print 'adding info to basic isolated nodes here (in step)'
+                    basicA['isolated_nodes_removed'].append(isolatednodes)
                     basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'].pop()+len(isolatednodes))
                 else:isolatednodes=[]
+                '''
                 nodes_removed=[node]
-                for nd in isolatednodes:nodes_removed.append(nd)
+                #for nd in isolatednodes:nodes_removed.append(nd)
                 
                 #checking dependency edges
                 args = network_handling.check_dependency_edges(networks,nodes_removed,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges,temp,failure['interdependency'])
@@ -237,12 +239,12 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                     networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges = args
                     basicB['no_of_nodes_removed'].append(len(nodes_removed_from_b))  
                     basicB['nodes_removed'].append(nodes_removed_from_b)
-                    optionB['no_of_inter_removed'].append(len(nodes_removed_from_b))
-                    optionB['nodes_removed_due_to_dependency_failure'].append(nodes_removed_from_b)
+                    dependency['no_of_nodes_removed_from_B'].append(len(nodes_removed_from_b))
+                    dependency['nodes_removed_from_B'].append(nodes_removed_from_b)
             else:
                 basicB['nodes_removed'].append([])
-                optionB['nodes_removed_due_to_dependency_failure'].append([])
-                optionB['no_of_inter_removed'].append(0)
+                dependency['nodes_removed_from_B'].append([])
+                dependency['no_of_nodes_removed_from_B'].append(0)
                 
         #------------un-package networks-------------------------------------
         GA, GB, GtempA, GtempB = networks
@@ -268,7 +270,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     
     #----------------re-package all data into respective containers------------
     networks = GA, GB, GtempA, GtempB
-    metrics = basicA,basicB,optionA, optionB,interdependency,cascading
+    metrics = basicA,basicB,optionA, optionB,dependency,cascading
     graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes
     parameters =  failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     
@@ -297,8 +299,9 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
                     basic_metrics['isolated_nodes_removed'].append(isolated_nodes)
                     basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+len(isolated_nodes))
-                    basic_metrics['nodes_removed'].append(basic_metrics['nodes_removed'].pop()+option_metrics['isolated_nodes_removed'][i])
+                    basic_metrics['nodes_removed'].append(basic_metrics['nodes_removed'].pop()+basic_metrics['isolated_nodes_removed'][i])
                 if net == 'A':
+                    print 'length is:',len(basic_metrics['isolated_nodes_removed'])
                     basic_metrics['isolated_nodes_removed'].append(isolated_nodes)
                     if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
                     if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
@@ -573,7 +576,6 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     basicA['no_of_components'] = [nx.number_connected_components(GA)] #number of subgraphs
     basicA['no_of_isolated_nodes'] = [len(nx.isolates(GA))]
     basicA['isolated_nodes_removed'] = [[]]
-    
     basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
        
     if failure['stand_alone'] <> True:
@@ -624,7 +626,6 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         for node in GA:
             avg+=GA.degree(node)
         optionA['avg_degree']=[avg/GA.number_of_nodes()]
-    if optionA['no_of_inter_removed']==True:optionA['no_of_inter_removed']=[0]
     if optionA['density']==True:optionA['density']=[nx.density(GA)]
         
     if optionA['maximum_betweenness_centrality']==True or optionA['avg_betweenness_centrality']==True:
@@ -678,7 +679,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     if failure['stand_alone'] == False:
         if optionB['giant_component_size']==True:
             optionB['giant_component_size']=[(nx.connected_component_subgraphs(GB)[0]).number_of_nodes()]
-        if optionB['avg_nodes_in_components']==True: 
+        if optionB['avg_size_of_components']==True: 
             optionB['avg_nodes_in_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
         if optionB['isolated_nodes']==True:
             optionB['isolated_nodes']=[nx.isolates(GB)]
@@ -686,40 +687,42 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
             optionB['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step    
         if handling_variables['remove_isolates']== True or optionB['no_of_isolated_nodes_removed']==True:
             optionB['no_of_isolated_nodes_removed']=[0]
-        if handling_variables['remove_subgraphs']== True or optionB['subnodes']==True or optionB['subnodes_count']==True:
+        if handling_variables['remove_subgraphs']== True or optionB['subnodes']==True or optionB['no_of_subnodes']==True:
             optionB['subnodes']=[[]] #nodes removed as part of isolated graphs
             optionB['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
         
         if optionB['density']==True:optionB['density']=[nx.density(GB)]
         
     if failure['stand_alone'] == False:
-        if optionB['path_length']==True:optionB['path_length']=[nx.average_shortest_path_length(GB)] 
-        if optionB['avg_path_length_of_components']==True or optionB['path_length_of_giant_component']==True:
+        if optionB['avg_path_length']==True:optionB['avg_path_length']=[nx.average_shortest_path_length(GB)] 
+        if optionB['avg_path_length_of_components']==True or optionB['avg_path_length_of_giant_component']==True:
             temp = []
             for g in nx.connected_component_subgraphs(GB):
                 temp.append(nx.average_shortest_path_length(GB))   
             if optionB['avg_path_length_of_components']==True:optionB['avg_path_length_of_components']=[temp]
-            if optionB['path_length_of_giant_component']==True:optionB['path_length_of_giant_component']=[temp[0]]
-        if optionB['path_length_geo']==True:
+            if optionB['avg_path_length_of_giant_component']==True:optionB['avg_path_length_of_giant_component']=[temp[0]]
+        if optionB['avg_geo_path_length']==True:
             for edge in GB.edges(data=True):
                 for key in edge[2].keys():
                     if key == str(length):
-                        optionB['path_length_geo']=[nx.average_shortest_path_length(GB,length)]
+                        optionB['avg_geo_path_length']=[nx.average_shortest_path_length(GB,length)]
                         break
-                    else: optionB['path_length_geo']=[None]   
+                    else: optionB['avg_geo_path_length']=[None]   
                 break            
         if optionB['avg_degree']==True:
              temp=0
              for node in GB:
                  temp+=GB.degree(node)
              optionB['avg_degree']=[temp/GB.number_of_nodes()]
-        if optionB['no_of_inter_removed']==True:optionB['no_of_inter_removed']=[0]
-        if optionB['nodes_removed_due_to_dependency_failure']==True: optionB['nodes_removed_due_to_dependency_failure']=[[]]
-       
-    #----------------specific metrics for interdependency----------------------
-    if failure['interdependency']== True:
-        interdependency_metrics = {'inter_removed_nodes':[[]], 'inter_removed_count':[0]}
-    else: interdependency_metrics = None
+            
+    #----------------specific metrics for dependency failures------------------
+    if failure['dependency']==True or failure['interdependency']== True:
+        if failure['dependency']==True:
+            dependency_metrics = {'nodes_removed_from_A':False, 'no_of_nodes_removed_from_A':False,
+                              'nodes_removed_from_B':[[]], 'no_of_nodes_removed_from_B':[0]}
+        else: dependency_metrics = {'nodes_removed_from_A':[[]], 'no_of_nodes_removed_from_A':[0],
+                              'nodes_removed_from_B':[[]], 'no_of_nodes_removed_from_B':[0]}
+    else: dependency_metrics = None
     
     #----------------specific metrics for cascading analysis-------------------
     if failure['cascading']== True:
@@ -737,7 +740,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     GtempB = GB.copy()
        
     #----------------package stuff up------------------------------------------
-    metrics = basicA,basicB,optionA,optionB,interdependency_metrics,cascading_metrics
+    metrics = basicA,basicB,optionA,optionB,dependency_metrics,cascading_metrics
     networks = GA, GB, GtempA, GtempB
     graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes 
     return metrics,graphparameters

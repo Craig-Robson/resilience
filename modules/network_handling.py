@@ -13,7 +13,7 @@ import networkx as nx
 import error_classes
 
 
-def check_node_removed(node, subnodes, isolated_nodes):
+def check_node_removed(node, isolated_nodes):
     '''Identify if a node has been removed from the network already, or if it is 
     still part of the network. Used by cascading failure model and 
     check_dependency_edges function'''
@@ -137,11 +137,10 @@ def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB
         #for edge in a_to_b_edges:
             edge = a_to_b_edges[z]
             if node == edge[0]:
-                REMOVED = check_node_removed(edge[1], optionB['subnodes'], optionB['isolated_nodes']) #check node in B is still there - it should be
+                REMOVED = check_node_removed(edge[1], nx.isolates(GtempB)) #check node in B is still there - it should be                
+                #REMOVED = check_node_removed(edge[1], optionB['subnodes'], optionB['isolated_nodes']) #check node in B is still there - it should be
                 if not REMOVED: 
                     GtempB.remove_node(edge[1])
-                    #print 'removing dependency edge (',a_to_b_edges[z],')'
-                    #print 'removing node from B (',edge[1],')'
                     a_to_b_edges.pop(z)
                     nodes_removed_from_b.append(edge[1])
                     z-=1

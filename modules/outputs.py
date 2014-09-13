@@ -418,12 +418,14 @@ def write_text_file(outputfile,CASCADING,basic,option):
     
     #write the basic metrics to the text file
     outputfile.write('\nnodes removed,' + str(tools.replace_all(str(basic['nodes_removed']), {',':';','];':'],'})))
-    outputfile.write('\ncount removed nodes,' + str(basic['no_of_nodes_removed']))
+    outputfile.write('\nnumber of nodes removed,' + str(basic['no_of_nodes_removed']))
     outputfile.write('\nnumber of nodes left,' + str(basic['no_of_nodes']))   
     outputfile.write('\nnumber of edges,' + str(basic['no_of_edges']))
     outputfile.write('\nnumber of components,' + str(basic['no_of_components']))
     outputfile.write('\nnumber of isolates,' + str(str(basic['no_of_isolated_nodes'])))
     outputfile.write('\nisolated nodes removed,' + str(tools.replace_all(str(basic['isolated_nodes_removed']), {',':';','];':'],'})))
+    #need to do below as not needed for basic B
+    if basic['nodes_selected_to_fail']<>False:outputfile.write('\nnodes selected to fail,' + str(basic['nodes_selected_to_fail']))
     
     #write the optional metrics to the rext file - if not set as False
     if option['size_of_components'] <> False:
@@ -447,15 +449,13 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['avg_path_length_of_giant_component'] <> False:
         outputfile.write('\naverage path length of giant component,' + str(option['avg_path_length_of_giant_component']))
     if option['avg_geo_path_length']<>False:
-        print '!!!!! Output to be sorted for avg geo path length !!!!!'
+        outputfile.write('\naverage geographic path length for whole graph,' + str(option['avg_geo_path_length']))
     if option['avg_geo_path_length_of_components']<>False:
-        print '!!!!! Output to be sorted for avg geo path length of components !!!!!'
+         outputfile.write('\naverage geographic path length for each component,' + str(tools.replace_all(str(option['avg_geo_path_length_of_components']),{',':';','];':'],'})))
     if option['avg_geo_path_length_of_giant_component']<>False:
-        print '!!!!! Output to be sorted for avg geo path length of giant component !!!!!'
+        outputfile.write('\naverage geographic path length of giant component,' + str(option['avg_geo_path_length_of_giant_component']))
     if option['avg_degree'] <> False:
         outputfile.write('\naverage degree,' + str(option['avg_degree']))
-    if option['no_of_inter_removed']<>False:
-        print '!!!!! Output to be sorted for no of inter removed !!!!!'
     if option['density']<>False:
         outputfile.write('\ndensity,' + str(option['density']))
     if option['maximum_betweenness_centrality']<>False:
@@ -489,7 +489,7 @@ def txtout(outputfile,graphparameters, parameters,metrics):
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters 
     GA, GB, GtempA, GtempB = networks
-    basicA,basicB,optionA,optionB,interdependency,cascading=metrics
+    basicA,basicB,optionA,optionB,dependency,cascading=metrics
 
     #write the parameters for the analysis out
     outputfile.write('\nThe analysis parameters were:')    
@@ -512,7 +512,12 @@ def txtout(outputfile,graphparameters, parameters,metrics):
     #use the function to write the metric results out for the network A
     write_text_file(outputfile,failure['cascading'],basicA,optionA)     
     #write the results for the metrics for network B using the function
-    if failure['stand_alone'] == False:
+    if failure['dependency'] == True or failure['interdependency'] == True:
+        if failure['interdependency']:
+            outputfile.write('\nno of nodes removed due to dependency failure,' + str(dependency['no_of_nodes_removed_from_A']))
+            outputfile.write('\nnodes removed due to dependency failure,' + str(tools.replace_all(str(dependency['nodes_removed_from_A']), {',':';','];':'],'})))
         outputfile.write('\nNETWORK B')
         write_text_file(outputfile,failure['cascading'],basicB,optionB)
-    
+        outputfile.write('\nno of nodes removed due to dependency failure,' + str(dependency['no_of_nodes_removed_from_B']))
+        outputfile.write('\nnodes removed due to dependency failure,' + str(tools.replace_all(str(dependency['nodes_removed_from_B']), {',':';','];':'],'})))
+        
