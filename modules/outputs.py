@@ -477,9 +477,9 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['avg_degree_centrality']<>False:
         outputfile.write('\naverage degree centrality,' + str(option['avg_degree_centrality']))
     if option['avg_closeness_centrality']<>False:
-        print '!!!!! Output to be sorted for avg closeness centrality !!!!!'
+        outputfile.write('\naverage closeness centrality,' + str(option['avg_closeness_centrality']))
     if option['diameter']<>False:
-        print '!!!!! Output to be sorted for diameter !!!!!'
+        outputfile.write('\ndiameter,' + str(option['diameter']))
     
 def txtout(outputfile,graphparameters, parameters,metrics):        
     '''Writes the results to a specified text file.

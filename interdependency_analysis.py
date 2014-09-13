@@ -399,7 +399,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             for val in temp.values():
                 avg+=val
             option_metrics['avg_degree_connectivity'].append(avg/len(temp))        
-        
+        if option_metrics['avg_closeness_centrality'] <> False:
+            temp = nx.closeness_centrality(Gtemp)
+            avg=0
+            for val in temp.values():
+                avg+=val
+            option_metrics['avg_closeness_centrality'].append(avg/len(temp))
         
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
@@ -421,6 +426,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['density']<>False:option_metrics['density'].append(0.0)
             if option_metrics['assortativity_coefficient']<>False:option_metrics['assortativity_coefficient'].append(0.0)
             if option_metrics['avg_degree_centrality']<>False:option_metrics['avg_degree_centrality'].append(0.0)
+            if option_metrics['diameter']<>False:option_metrics['diameter'].append(0.0)
             #if option_metrics['avg_size_of_components']<>False: option_metrics['avg_size_of_components']=0
             basic_metrics['no_of_components'].append(nx.number_connected_components(Gtemp))
             basic_metrics['no_of_edges'].append(0)
@@ -481,6 +487,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 option_metrics['avg_geo_path_length_of_giant_component'].append(av_len)
             elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == False:
                 option_metrics['avg_geo_path_length_of_giant_component'].append(None)
+                
+            if option_metrics['diameter'] <> False:
+                if len(nx.connected_component_subgraphs(Gtemp)) > 1:
+                    option_metrics['diameter'].append('ERROR')
+                else:
+                    option_metrics['diameter'].append(nx.diameter(Gtemp))                
                 
             #-------------------other calculations-----------------------------
             if option_metrics['giant_component_size'] <> False: 
@@ -569,13 +581,11 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         basicB['no_of_isolated_nodes'] = [len(nx.isolates(GB))]
         basicB['isolated_nodes_removed'] = [[]]
         
-        
     if optionA['size_of_components']==True:
         temp = []
         for g in nx.connected_component_subgraphs(GA):
             temp.append(g.number_of_nodes())
         optionA['size_of_components']=[temp]
-        print '!!!!! Need to finish this for the metric size of components!!!!!'
     if optionA['giant_component_size']==True:
         optionA['giant_component_size']=[(nx.connected_component_subgraphs(GA)[0]).number_of_nodes()]
     if optionA['avg_size_of_components']==True:
@@ -605,7 +615,6 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                         break
                     else: optionA['avg_geo_path_length']=[None]   
                 break
-            
     if optionA['avg_degree']==True:
         temp=0
         for node in GA:
@@ -623,7 +632,6 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
             for val in temp.values():
                 avg+=val
             optionA['avg_betweenness_centrality']=[avg/len(temp)]
-            
     if optionA['assortativity_coefficient']==True:
         optionA['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GA)]
     if optionA['clustering_coefficient']==True:
@@ -654,11 +662,14 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         for val in temp.values():
             avg+=val
         optionA['avg_degree_centrality']=[avg/len(temp)]
-
     if optionA['avg_closeness_centrality']==True:
-        print '!!!!! Need to sort avg closeness centrality metric!!!!!'
+        temp = nx.closeness_centrality(GA)
+        avg=0
+        for val in temp.values():
+            avg+=val
+        optionA['avg_closeness_centrality']=[avg/len(temp)]
     if optionA['diameter']==True:
-        print '!!!!! Need to sort diameter metric!!!!!'
+        optionA['diameter']=[nx.diameter(GA)]
     
     if failure['stand_alone'] == False:
         if optionB['giant_component_size']==True:
