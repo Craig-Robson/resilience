@@ -564,6 +564,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     from_a_nodes = []; to_b_nodes = []
     if failure['stand_alone'] == False:
         for item in a_to_b_edges:
+            print 'a to be edges are:', a_to_b_edges
             from_a_nodes.append(item[0]);to_b_nodes.append(item[1])
         if failure['interdependency']== True:pass        
     #----------------sort the networks out-------------------------------------
@@ -702,7 +703,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
             optionB['avg_nodes_in_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
         if optionB['isolated_nodes']==True:
             optionB['isolated_nodes']=[nx.isolates(GB)]
-        if handling_variables['remove_isolates']==True or optionB['isolated_nodes_removed']==True:
+        if handling_variables['remove_isolates']==True or basicB['isolated_nodes_removed']==True:
             optionB['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step    
         if handling_variables['remove_isolates']== True or optionB['no_of_isolated_nodes_removed']==True:
             optionB['no_of_isolated_nodes_removed']=[0]
