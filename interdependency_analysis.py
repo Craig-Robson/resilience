@@ -301,7 +301,6 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+len(isolated_nodes))
                     basic_metrics['nodes_removed'].append(basic_metrics['nodes_removed'].pop()+basic_metrics['isolated_nodes_removed'][i])
                 if net == 'A':
-                    print 'length is:',len(basic_metrics['isolated_nodes_removed'])
                     basic_metrics['isolated_nodes_removed'].append(isolated_nodes)
                     if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
                     if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))
@@ -616,16 +615,31 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
             temp.append(nx.average_shortest_path_length(GA))
         if optionA['avg_path_length_of_components']== True:optionA['avg_path_length_of_components']=[temp]
         if optionA['avg_path_length_of_giant_component']==True:optionA['avg_path_length_of_giant_component']=[temp[0]]
-    if optionA['avg_geo_path_length']==True:
+    if optionA['avg_geo_path_length']==True or optionA['avg_geo_path_length_of_components']==True or optionA['avg_geo_path_length_of_giant_component']==True:
         #need to check that the edges have an attribute 'length'
         for edge in GA.edges(data=True):
             for edge in GA.edges(data=True):
-                for key in edge[2].keys():
-                    if key == str(length):
-                        optionA['avg_geo_path_length']=[nx.average_shortest_path_length(GA,length)]
-                        break
-                    else: optionA['avg_geo_path_length']=[None]   
+                if len(edge[2].keys()) > 0:
+                    for key in edge[2].keys():
+                        if key == str(length):
+                            temp = []
+                            for g in nx.connected_component_subgraphs(GA):
+                                temp.append(nx.average_shortest_path_length(g,length))
+                            if optionA['avg_geo_path_length']:
+                                avg=0
+                                for val in temp:
+                                    avg+=val
+                                optionA['avg_geo_path_length']=[avg/len(temp)]
+                            if optionA['avg_geo_path_length_of_components']:
+                                optionA['avg_geo_path_length_of_components']=[temp]
+                            if optionA['avg_geo_path_length_of_giant_component']:
+                                optionA['avg_geo_path_length_of_giant_component']=[temp[0]]
+                            break
+                optionA['avg_geo_path_length']=[None]
+                optionA['avg_geo_path_length_of_components']=[None]
+                optionA['avg_geo_path_length_of_giant_component']=[None]
                 break
+            
     if optionA['avg_degree']==True:
         avg=0.0
         for node in GA:
@@ -706,14 +720,31 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                 temp.append(nx.average_shortest_path_length(GB))   
             if optionB['avg_path_length_of_components']==True:optionB['avg_path_length_of_components']=[temp]
             if optionB['avg_path_length_of_giant_component']==True:optionB['avg_path_length_of_giant_component']=[temp[0]]
-        if optionB['avg_geo_path_length']==True:
+        if optionB['avg_geo_path_length']==True or optionB['avg_geo_path_length_of_components']==True or optionB['avg_geo_path_length_of_giant_component']==True:
+            #need to check that the edges have an attribute 'length'
             for edge in GB.edges(data=True):
-                for key in edge[2].keys():
-                    if key == str(length):
-                        optionB['avg_geo_path_length']=[nx.average_shortest_path_length(GB,length)]
-                        break
-                    else: optionB['avg_geo_path_length']=[None]   
-                break            
+                for edge in GB.edges(data=True):
+                    if len(edge[2].keys()) > 0:
+                        for key in edge[2].keys():
+                            if key == str(length):
+                                temp = []
+                                for g in nx.connected_component_subgraphs(GB):
+                                    temp.append(nx.average_shortest_path_length(g,length))
+                                if optionB['avg_geo_path_length']:
+                                    avg=0
+                                    for val in temp:
+                                        avg+=val
+                                    optionB['avg_geo_path_length']=[avg/len(temp)]
+                                if optionB['avg_geo_path_length_of_components']:
+                                    optionB['avg_geo_path_length_of_components']=[temp]
+                                if optionB['avg_geo_path_length_of_giant_component']:
+                                    optionB['avg_geo_path_length_of_giant_component']=[temp[0]]
+                                break
+                    optionB['avg_geo_path_length']=[None]
+                    optionB['avg_geo_path_length_of_components']=[None]
+                    optionB['avg_geo_path_length_of_giant_component']=[None]
+                    break
+            
         if optionB['avg_degree']==True:
              temp=0
              for node in GB:
@@ -798,6 +829,6 @@ def default_parameters(fileName, failure_1 = None, failure_2 = None, failure_3 =
     parameters=metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName, a_to_b_edges
     return parameters
     
-def outputresults(graphparameters, parameters,logfilepath=None,multiterations=False):
-    values,error = outputs.outputresults(graphparameters, parameters,logfilepath,multiterations)
+def outputresults(graphparameters, parameters, metrics, logfilepath=None,multiterations=False):
+    values,error = outputs.outputresults(graphparameters, parameters, metrics, logfilepath,multiterations)
     return values
