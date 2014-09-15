@@ -195,7 +195,7 @@ def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiter
     #unpacking the variables
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
-    basicA,basicB,optionA,optionB,interdependency,cascading=metrics
+    basicA,basicB,optionA,optionB,dependency,cascading=metrics
     #if more than one simualtion has been run over the same network
     if multiiterations == True:
         #send to the method for calculating the averages and writing the results out
@@ -212,7 +212,7 @@ def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiter
         #send to the textout function to write the results out
         txtout(outputfile,graphparameters, parameters,metrics)
     #pack the metric values together again
-    values = basicA, basicB, optionA, optionB  
+    values = basicA, basicB, optionA, optionB, dependency,cascading
     return values,error       
     
 def average_txtresults(graphparameters, parameters,error):

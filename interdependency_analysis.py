@@ -554,10 +554,9 @@ def node_edge_atts(Gtemp):
 
 def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, a_to_b_edges):
     
-    #unpack the paarameters
-    #metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters
-        #----------------unpack the metrics----------------------------------------
-    basicA, basicB, optionA, optionB = metrics    
+    #unpack the paarameter
+    #----------------unpack the metrics----------------------------------------
+    basicA, basicB, optionA, optionB, dependency, cascading = metrics    
     #----------------sort a_to_b edges-----------------------------------------
     #when doing dependency and interdependency analysis, need to create lists 
     #of the nodes in each network affected by the links 
