@@ -14,7 +14,9 @@ import interdependency_analysis as ia
 
 #nx_pgnet module location
 nx_pgnet_location = "C:/a8243587_DATA/GitRepo/nx_pgnet"
-nx_pgnet_location = "C:/Users/Craig/GitRepo/nx_pgnet"
+#nx_pgnet_location = "C:/Users/Craig/GitRepo/nx_pgnet"
+sys.path.append(nx_pgnet_location)
+import nx_pgnet
 
 #import subsidiary resilience modules
 sys.path.append("C:/a8243587_DATA/GitRepo/resilience/resilience_modules")
@@ -31,8 +33,8 @@ failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
 handling_variables = {'remove_subgraphs':True,'remove_isolates':True,'no_isolates':False}  
 
 #------------------setting of data input type------------------------------
-use_nx_single = True
-use_db = False
+use_nx_single = False
+use_db = True
 use_csv = False
 mass = False
 
@@ -73,7 +75,7 @@ host = 'localhost'
 user = 'postgres'
 password = 'aaSD2011'
 port = '5433'
-dbname = 'testing'
+dbname = 'tetsting_res'
 
 net_name_a = 'power_lines'; net_name_b = 'tube_lines'
 con = {'host':host,'dbname':dbname,'user':user,'password':password,'port':port}
@@ -105,32 +107,32 @@ basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes'
                    'no_of_edges':True,'no_of_components':True,
                    'no_of_isolated_nodes':True,'isolated_nodes_removed':True,
                    'nodes_selected_to_fail':True}
-option_metrics_A = {'size_of_components':           False,
-                    'giant_component_size':         False,
-                    'avg_size_of_components':       False,
-                    'isolated_nodes':               False,
-                    'no_of_isolated_nodes_removed': False,
-                    'subnodes':                     False,
-                    'no_of_subnodes':               False,
-                    'avg_path_length':              False,
-                    'avg_path_length_of_components':False,
-                    'avg_path_length_of_giant_component':   False,
+option_metrics_A = {'size_of_components':           True,
+                    'giant_component_size':         True,
+                    'avg_size_of_components':       True,
+                    'isolated_nodes':               True,
+                    'no_of_isolated_nodes_removed': True,
+                    'subnodes':                     True,
+                    'no_of_subnodes':               True,
+                    'avg_path_length':              True,
+                    'avg_path_length_of_components':True,
+                    'avg_path_length_of_giant_component':   True,
                     'avg_geo_path_length':                  True,
-                    'avg_geo_path_length_of_components':    False,
-                    'avg_geo_path_length_of_giant_component':False,
-                    'avg_degree':                   False,
-                    'density':                      False,
-                    'maximum_betweenness_centrality':False,
-                    'avg_betweenness_centrality':   False,
-                    'assortativity_coefficient':    False,
-                    'clustering_coefficient':       False,
-                    'transitivity':                 False,
-                    'square_clustering':            False,
-                    'avg_neighbor_degree':          False,
-                    'avg_degree_connectivity':      False,
-                    'avg_degree_centrality':        False,
-                    'avg_closeness_centrality':     False,
-                    'diameter':                     False
+                    'avg_geo_path_length_of_components':    True,
+                    'avg_geo_path_length_of_giant_component':True,
+                    'avg_degree':                   True,
+                    'density':                      True,
+                    'maximum_betweenness_centrality':True,
+                    'avg_betweenness_centrality':   True,
+                    'assortativity_coefficient':    True,
+                    'clustering_coefficient':       True,
+                    'transitivity':                 True,
+                    'square_clustering':            True,
+                    'avg_neighbor_degree':          True,
+                    'avg_degree_connectivity':      True,
+                    'avg_degree_centrality':        True,
+                    'avg_closeness_centrality':     True,
+                    'diameter':                     True
                     }
 
 if failure['stand_alone'] == False:
@@ -138,7 +140,10 @@ if failure['stand_alone'] == False:
     option_metrics_B = option_metrics_A.copy()
     basic_metrics_B['nodes_selected_to_fail']=False
 else: basic_metrics_B = None; option_metrics_B = None
-metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B  
+
+dependency = None
+cascading = None
+metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B, dependency, cascading  
 
 #------------------option to set the attribute which contins the length of the edges
 if option_metrics_A['avg_geo_path_length'] <> False: length = 'shape_leng'
@@ -147,7 +152,6 @@ else: length = None
 #------------------file names for csv based analysis-------------------------
 file_1_name = 'dependencey_test_n1'
 file_2_name = 'dependencey_test_n2'
-
 
 #-----------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -168,16 +172,21 @@ elif use_csv == True:
     ia.analyse_existing_networks(NETWORK_NAME,conn,dbname,parameters,noia,use_db,use_csv)
 elif use_db == True:
     parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
+    import ogr
+    conn = ogr.Open(conn)
+    GA = nx_pgnet.read(conn).pgnet(net_name_a)
+    GB = nx_pgnet.read(conn).pgnet(net_name_b)
+    for nd in GA.nodes(data=True): del nd[1]['id']
+    for nd in GB.nodes(data=True): del nd[1]['id']
     complete = ia.main(GA, GB, parameters,logfilepath)
-elif mass == True and failure['stand_alone'] == True: #for mass single analysis 
-    print 'where mass = True and Stand_alone = true'
+elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
     '''select which network types to analyse'''
     lightrail = False; roads_national = False; roads_regional = False
     air = False; other = False; infrastructure = False
     er = False; gnm = False; ws = False; ba = False
     hra = False; hr = False; hc = False; tree = True
-    
     noioa = 5   #number_of_iterations_of_analysis
     parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
 

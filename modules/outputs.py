@@ -21,6 +21,7 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
     Returns:   True/False '''
     GA, GB, GtempA, GtempB = networks
     sys.path.append('C:/Users/Craig/GitRepo/nx_pgnet')
+    sys.path.append('C:/a8243587_DATA/GitRepo/nx_pgnet')
     import nx_pgnet
     conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     conn = ogr.Open(conn)
@@ -90,8 +91,8 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
         #-----------------write basic metrics out------------------------------
         #can't figure out how to have dynamic name variable and allow text to be written out to table as well
         conn.ExecuteSQL("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s)""" 
-                %(i,basicA['no_of_nodes'][i],basicA['number_of_edges'][i],
-                  basicA['number_of_components'][i],basicA['no_of_isolated_nodes'][i]))
+                %(i,basicA['no_of_nodes'][i],basicA['no_of_edges'][i],
+                  basicA['no_of_components'][i],basicA['no_of_isolated_nodes'][i]))
         if basicA['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_removed='{}' WHERE time_step=%s""" %(i))        
         else:            
             if len(basicA['nodes_removed'][i])==1:conn.ExecuteSQL("""UPDATE network_a SET nodes_removed=ARRAY %s WHERE time_step=%s""" %(str(basicA['nodes_removed'][i]),i))
@@ -105,7 +106,7 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
         for keys in optionA:
             if optionA[keys]<>False and optionA[keys]<>True:
                 try:
-                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes':
+                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_geo_path_length_of_components':
                         if optionA[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))        
                         else:
                             if len(optionA[keys][i])==1:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionA[keys][i]),i))
@@ -127,24 +128,20 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
             #if dependency or interdependency
             #---------------write basic metrics out----------------------------
             conn.ExecuteSQL("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s)""" 
-                %(i,basicB['no_of_nodes'][i],basicB['number_of_edges'][i],
-                  basicB['number_of_components'][i],basicB['no_of_isolated_nodes'][i]))
+                %(i,basicB['no_of_nodes'][i],basicB['no_of_edges'][i],
+                  basicB['no_of_components'][i],basicB['no_of_isolated_nodes'][i]))
             try:
                 if basicB['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed='{}' WHERE time_step=%s""" %(i))        
                 else: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed= ARRAY %s WHERE time_step=%s""" %(basicB['nodes_removed'][i],i))
             except:
                 print "Error in basicB 'nodes_removed' when trying to write out results."
                 exit()
-            if basicB['nodes_selected_to_fail'][i]==[]: conn.ExecuteSQL("""UPDATE network_b SET nodes_selected_to_fail='{}' WHERE time_step=%s""" %(i))  
-            else: 
-                if len(basicB['nodes_selected_to_fail'][i])==1:conn.ExecuteSQL("""UPDATE network_b SET nodes_selected_to_fail=ARRAY %s WHERE time_step=%s""" %(str(basicB['nodes_selected_to_fail'][i]),i))
-                else:conn.ExecuteSQL("""UPDATE network_b SET nodes_selected_to_fail=%s WHERE time_step=%s""" %(basicB['nodes_selected_to_fail'][i],i))
-
+            
             #---------------write option metrics out---------------------------
             for keys in optionB:
                 if optionB[keys]<>False and optionB[keys]<>True:
                     try:
-                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='nodes_removed_due_to_dependency_failure':
+                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_geo_path_length_of_components':
                             if optionB[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_b SET %s='{}' WHERE time_step=%s""" %(keys,i))
                             elif len(optionB[keys][i])==1:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionB[keys][i]),i))
                             else:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
@@ -173,7 +170,10 @@ def create_db_res_table(conn,table_name,option):
     '''
     '''
     conn.ExecuteSQL("DROP TABLE IF EXISTS %s" %(table_name))
-    conn.ExecuteSQL("CREATE TABLE %s (time_step INT PRIMARY KEY, no_of_nodes INT, no_of_edges INT, no_of_comp INT, no_of_isolated_nodes INT, nodes_removed INT ARRAY, nodes_selected_to_fail INT ARRAY)" %(table_name))
+    conn.ExecuteSQL("CREATE TABLE %s (time_step INT PRIMARY KEY,"
+                    "no_of_nodes INT, no_of_edges INT, no_of_comp INT,"
+                    "no_of_isolated_nodes INT, nodes_removed INT ARRAY,"
+                    "nodes_selected_to_fail INT ARRAY, isolated_nodes_removed INT ARRAY)" %(table_name))
     for keys in option:
         if option[keys]==False: pass
         elif option[keys]=='subnodes':conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s INT ARRAY" %(table_name,keys))

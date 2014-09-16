@@ -563,7 +563,6 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     from_a_nodes = []; to_b_nodes = []
     if failure['stand_alone'] == False:
         for item in a_to_b_edges:
-            print 'a to be edges are:', a_to_b_edges
             from_a_nodes.append(item[0]);to_b_nodes.append(item[1])
         if failure['interdependency']== True:pass        
     #----------------sort the networks out-------------------------------------
@@ -639,6 +638,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                 optionA['avg_geo_path_length_of_components']=[None]
                 optionA['avg_geo_path_length_of_giant_component']=[None]
                 break
+            break
             
     if optionA['avg_degree']==True:
         avg=0.0
@@ -696,23 +696,26 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
         optionA['diameter']=[nx.diameter(GA)]
     
     if failure['stand_alone'] == False:
+        if optionB['size_of_components']==True:
+            temp = []
+            for g in nx.connected_component_subgraphs(GB):
+                temp.append(g.number_of_nodes())
+            optionB['size_of_components']=[temp]
         if optionB['giant_component_size']==True:
             optionB['giant_component_size']=[(nx.connected_component_subgraphs(GB)[0]).number_of_nodes()]
         if optionB['avg_size_of_components']==True: 
-            optionB['avg_nodes_in_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
+            optionB['avg_size_of_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
         if optionB['isolated_nodes']==True:
             optionB['isolated_nodes']=[nx.isolates(GB)]
         if handling_variables['remove_isolates']==True or basicB['isolated_nodes_removed']==True:
-            optionB['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step    
+            basicB['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step
         if handling_variables['remove_isolates']== True or optionB['no_of_isolated_nodes_removed']==True:
             optionB['no_of_isolated_nodes_removed']=[0]
         if handling_variables['remove_subgraphs']== True or optionB['subnodes']==True or optionB['no_of_subnodes']==True:
             optionB['subnodes']=[[]] #nodes removed as part of isolated graphs
             optionB['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
-        
         if optionB['density']==True:optionB['density']=[nx.density(GB)]
         
-    if failure['stand_alone'] == False:
         if optionB['avg_path_length']==True:optionB['avg_path_length']=[nx.average_shortest_path_length(GB)] 
         if optionB['avg_path_length_of_components']==True or optionB['avg_path_length_of_giant_component']==True:
             temp = []
@@ -744,12 +747,65 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                     optionB['avg_geo_path_length_of_components']=[None]
                     optionB['avg_geo_path_length_of_giant_component']=[None]
                     break
+                break
             
         if optionB['avg_degree']==True:
              temp=0
              for node in GB:
                  temp+=GB.degree(node)
              optionB['avg_degree']=[temp/GB.number_of_nodes()]
+             
+        if optionB['density']==True:optionA['density']=[nx.density(GB)]
+        
+        if optionB['maximum_betweenness_centrality']==True or optionB['avg_betweenness_centrality']==True:
+            temp = nx.betweenness_centrality(GB)
+            if optionB['maximum_betweenness_centrality']<>False:
+                optionB['maximum_betweenness_centrality']=[max(temp.values())]
+            if optionB['avg_betweenness_centrality']<>False:
+                avg=0.0
+                for val in temp.values():
+                    avg+=val
+                optionB['avg_betweenness_centrality']=[avg/len(temp)]
+        if optionB['assortativity_coefficient']==True:
+            optionB['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GB)]
+        if optionB['clustering_coefficient']==True:
+            optionB['clustering_coefficient']=[nx.average_clustering(GB)]
+        if optionB['transitivity']==True:
+            optionB['transitivity']=[nx.transitivity(GB)]
+        if optionB['square_clustering']==True:
+            temp = nx.square_clustering(GB)
+            avg=0.0
+            for val in temp.values():
+                avg+=val
+            optionB['square_clustering']=[avg/len(temp)]
+        if optionB['avg_neighbor_degree']==True:
+            temp = nx.average_neighbor_degree(GB)
+            avg=0.0
+            for val in temp.values():
+                avg+=val
+            optionB['avg_neighbor_degree']=[avg/len(temp)]
+        if optionB['avg_degree_connectivity']==True:
+            temp = nx.average_degree_connectivity(GB)
+            avg=0.0
+            for val in temp.values():
+                avg+=val
+            optionB['avg_degree_connectivity']=[avg/len(temp)]
+        if optionB['avg_degree_centrality']==True:
+            temp = nx.degree_centrality(GB)
+            avg=0.0
+            for val in temp.values():
+                avg+=val
+            optionB['avg_degree_centrality']=[avg/len(temp)]
+        if optionB['avg_closeness_centrality']==True:
+            temp = nx.closeness_centrality(GB)
+            avg=0.0
+            for val in temp.values():
+                avg+=val
+            optionB['avg_closeness_centrality']=[avg/len(temp)]
+        if optionB['diameter']==True:
+            optionB['diameter']=[nx.diameter(GB)]
+             
+             
             
     #----------------specific metrics for dependency failures------------------
     if failure['dependency']==True or failure['interdependency']== True:
