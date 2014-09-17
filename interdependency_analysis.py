@@ -55,7 +55,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters
     
     #------set up the metrics for the analysis being asked for-----------------
-    metrics,graphparameters = metrics_initial(GA,GB,metrics,failure,handling_variables,length,a_to_b_edges)
+    networks,metrics,graphparameters = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges)
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     basicA,basicB,optionA,optionB,interdependency_metrics,cascading_metrics = metrics
     parameters=failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
@@ -63,10 +63,16 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     print 'i is:', i
     #--------------------node and edge attributes------------------------------
     if store_n_e_atts:
-        'to be implimented when everything else works'
+        '''
+        this will be done in the metric computation sections as this results 
+        in less repitition in computations.
+        Once complete, will remove this from code.
+        '''
         pass
     #-----------------write networks to database t = 0-------------------------
-    networks=GA,GB,GA,GB
+    #print networks
+    #exit()
+    #networks=GA,GB,GA,GB
     if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
     #-----------------write metrics to database table t = 0--------------------  
     if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k=0)
@@ -534,25 +540,26 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     avg+=val
                 option_metrics['avg_degree_centrality'].append(avg/len(temp))
 
-            if store_n_e_atts: Gtemp = node_edge_atts(Gtemp)
+            if store_n_e_atts: Gtemp = node_edge_att_fields(Gtemp)
         
         #add the number of nodes left to the respective list
         basic_metrics['no_of_nodes'].append(Gtemp.number_of_nodes())
 
         return iterate,Gtemp,i,to_b_nodes,from_a_nodes,a_to_b_edges,node_list,basic_metrics,option_metrics 
 
-def node_edge_atts(Gtemp):
+def node_edge_att_fields(Gtemp):
     #---------add some metrics to the nodes and edges of the network-----------
-    Gtemp = tools.add_node_field(Gtemp,'degree',Gtemp.degree())
-    Gtemp = tools.add_node_field(Gtemp,'betweenness',nx.betweenness_centrality(Gtemp))
-    Gtemp = tools.add_node_field(Gtemp,'clustering',nx.clustering(Gtemp))
-    Gtemp = tools.add_node_field(Gtemp,'square_clustering', nx.square_clustering(Gtemp))
-    Gtemp = tools.add_node_field(Gtemp,'avg_neighbour_degree',nx.average_neighbor_degree(Gtemp))
+        
+    #Gtemp = tools.add_node_field(Gtemp,'degree',Gtemp.degree())
+    #Gtemp = tools.add_node_field(Gtemp,'betweenness_centrality',nx.betweenness_centrality(Gtemp))
+    #Gtemp = tools.add_node_field(Gtemp,'clustering',nx.clustering(Gtemp))
+    #Gtemp = tools.add_node_field(Gtemp,'square_clustering', nx.square_clustering(Gtemp))
+    #Gtemp = tools.add_node_field(Gtemp,'avg_neighbour_degree',nx.average_neighbor_degree(Gtemp))
     
-    Gtemp = tools.add_edge_field(Gtemp,'betweenness',nx.edge_betweenness_centrality(Gtemp))
+    #Gtemp = tools.add_edge_field(Gtemp,'betweenness',nx.edge_betweenness_centrality(Gtemp))
     return Gtemp
 
-def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, a_to_b_edges):
+def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_e_atts, length, a_to_b_edges):
     
     #unpack the paarameter
     #----------------unpack the metrics----------------------------------------
@@ -656,6 +663,11 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
             for val in temp.values():
                 avg+=val
             optionA['avg_betweenness_centrality']=[avg/len(temp)]
+        if store_n_e_atts == True:
+            print 'WRITING NODE ATTRIBUTE BETWEENNESS'
+            for key in temp:
+                GA.node[key]['betweenness_centrality'] = temp[key]
+            
     if optionA['assortativity_coefficient']==True:
         optionA['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GA)]
     if optionA['clustering_coefficient']==True:
@@ -767,6 +779,10 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                 for val in temp.values():
                     avg+=val
                 optionB['avg_betweenness_centrality']=[avg/len(temp)]
+            if store_n_e_atts == True:
+                for key in temp:
+                    GB.node[key]['betweenness_centrality'] = temp[key]
+                          
         if optionB['assortativity_coefficient']==True:
             optionB['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GB)]
         if optionB['clustering_coefficient']==True:
@@ -836,7 +852,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
     metrics = basicA,basicB,optionA,optionB,dependency_metrics,cascading_metrics
     networks = GA, GB, GtempA, GtempB
     graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes 
-    return metrics,graphparameters
+    return networks,metrics,graphparameters
     
     
 def default_parameters(fileName, failure_1 = None, failure_2 = None, failure_3 = None, basic_A = None, option_A = None, basic_B = None, option_B = None):
