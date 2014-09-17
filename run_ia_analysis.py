@@ -94,7 +94,7 @@ write_step_to_db = True
 
 #------------------setting of dependency edges-----------------------------
 if failure['dependency'] == True or failure['interdependency'] == True:
-    a_to_b_edges = [(3,1),(3,2),(5,3)]
+    a_to_b_edges = [(3,1),(3,2),(5,3),(34,45),(24,89),(35,245),(54,345),(54,101),(78,254),(65,289),(32,198),(92,312)]
     #fromSQL='SELECT "p" FROM "Inter_Lines"
     #toSQL='SELECT "t" FROM "Inter_Lines"
     if failure['interdependency'] == True:

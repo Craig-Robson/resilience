@@ -74,19 +74,20 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
             pass
     return
 
-def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameters,k):
+def write_results_table(metrics,i,failure,db_parameters,k):
     '''
     At each time step writes the metrics calculated to a table in the database.
     If i=0 creates the table as well. At the end, renames the table.
     '''
     import ogr
+    basicA,basicB,optionA,optionB,dependency,cascading = metrics
     conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     defaultA = 'network_a'; defaultB = 'network_b'
     print 'Writing results table(s)'
     conn = ogr.Open(conn)
     if i == 0: 
-        create_db_res_table(conn,defaultA,optionA)
-        if not STAND_ALONE: create_db_res_table(conn,defaultB,optionB)
+        create_db_res_table(conn,defaultA,optionA,dependency,cascading,'A')
+        if not failure['stand_alone']: create_db_res_table(conn,defaultB,optionB,dependency,cascading,'B')
     if i <> -100:
         #-----------------write basic metrics out------------------------------
         #can't figure out how to have dynamic name variable and allow text to be written out to table as well
@@ -124,9 +125,8 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
                     else:
                         conn.ExecuteSQL("""UPDATE network_a SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
                         print "Error occured when writing values to database for network 'a' where the key is '%s'" %(keys)
-                        print "Error when values were:", optionA[keys][i]
-                        print "Data list is:", optionA[keys]
-        if not STAND_ALONE:
+
+        if not failure['stand_alone']:
             #if dependency or interdependency
             #---------------write basic metrics out----------------------------
             conn.ExecuteSQL("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s)""" 
@@ -159,14 +159,34 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
                         else:
                             conn.ExecuteSQL("""UPDATE network_b SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
                             print "Error occured when writing values to database for network 'b' where the key is '%s'" %(keys)
+
+            # write out dependency metrics
+            for keys in dependency.keys():
+                
+                if dependency[keys]<>False:
+                    if keys=='no_of_nodes_removed_from_A':
+                        conn.ExecuteSQL("""UPDATE network_a SET %s=%s WHERE time_step=%s""" %(keys,dependency[keys][i],i))
+                    elif keys=='nodes_removed_from_A':
+                        if dependency[keys][i]==[]:
+                            conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))
+                        else:conn.ExecuteSQL("""UPDATE network_a SET %s= ARRAY %s WHERE time_step=%s""" %(keys,dependency[keys][i],i))
+                    elif keys=='no_of_nodes_removed_from_B':
+                        conn.ExecuteSQL("""UPDATE network_b SET %s=%s WHERE time_step=%s""" %(keys,dependency[keys][i],i))
+                    elif keys=='nodes_removed_from_B':
+                        if dependency[keys][i]==[]:
+                            conn.ExecuteSQL("""UPDATE network_b SET %s='{}' WHERE time_step=%s""" %(keys,i))
+                        else:conn.ExecuteSQL("""UPDATE network_b SET %s= ARRAY %s WHERE time_step=%s""" %(keys,dependency[keys][i],i))          
+            if failure['interdependency']==True:
+                pass                
+            
     if k==-99:
         #if last iteration rename tables to something more specific
         rename_db_table(conn,defaultA,table_name_new='results_'+net_name_a)
-        if not STAND_ALONE:
+        if not failure['stand_alone']:
             rename_db_table(conn,defaultB,table_name_new='results_'+net_name_b)
     return
 
-def create_db_res_table(conn,table_name,option):
+def create_db_res_table(conn,table_name,option,dependency,cascading,net):
     '''
     '''
     conn.ExecuteSQL("DROP TABLE IF EXISTS %s" %(table_name))
@@ -174,14 +194,33 @@ def create_db_res_table(conn,table_name,option):
                     "no_of_nodes INT, no_of_edges INT, no_of_comp INT,"
                     "no_of_isolated_nodes INT, nodes_removed INT ARRAY,"
                     "nodes_selected_to_fail INT ARRAY, isolated_nodes_removed INT ARRAY)" %(table_name))
+    
     for keys in option:
         if option[keys]==False: pass
         elif option[keys]=='subnodes':conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s INT ARRAY" %(table_name,keys))
         else:conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
+                              
+    for keys in dependency:
+        #this will write out no matter A or B - need to sort so it does not do this
+        if dependency[keys]==False: pass
+        else:
+            if net=='A':
+                if keys=='nodes_removed_from_A' or keys=='no_of_nodes_removed_from_A':
+                    conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
+            elif net=='B':
+                if keys=='nodes_removed_from_B' or keys=='no_of_nodes_removed_from_B':
+                    conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
+        
+    if cascading <> None:
+        for keys in cascading:
+            if cascading[keys]==False: pass
+            else:conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
+                
     return
 
 def rename_db_table(conn,table_name_old,table_name_new):
     '''
+    Rename the table and delete the old version.
     '''
     conn.ExecuteSQL("DROP TABLE IF EXISTS %s;" %(table_name_new))
     conn.ExecuteSQL("ALTER TABLE %s RENAME TO %s;" %(table_name_old,table_name_new))

@@ -69,7 +69,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     networks=GA,GB,GA,GB
     if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
     #-----------------write metrics to database table t = 0--------------------  
-    if write_results_table:outputs.write_results_table(basicA,optionA,basicB,optionB,i,failure['stand_alone'],db_parameters,k=0)
+    if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k=0)
     i +=1
     
     graphparameters=networks,i,node_list,to_b_nodes,from_a_nodes
@@ -89,7 +89,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
             #-------------write networks to database---------------------------
             if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)    
             #-------------write metrics to database table----------------------  
-            if write_results_table:outputs.write_results_table(basicA,optionA,basicB,optionB,i,failure['stand_alone'],db_parameters,k)
+            if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k)
             #-------------update log file (if file path set)-------------------
             tools.write_to_log_file(logfilepath,'step completed')
             #-------------update i as iteration finished-----------------------
