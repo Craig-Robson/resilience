@@ -427,10 +427,10 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             i = -100
             #add values for the metrics which are not set as False
             if option_metrics['avg_path_length'] <> False: option_metrics['avg_path_length'].append(0.0)
-            if option_metrics['avg_path_length_of_components']<>False: option_metrics['avg_path_length_of_components'].append(0.0)
+            if option_metrics['avg_path_length_of_components']<>False: option_metrics['avg_path_length_of_components'].append([0.0])
             if option_metrics['avg_path_length_of_giant_component']<> False: option_metrics['avg_path_length_of_giant_component'].append(0.0)
             if option_metrics['avg_geo_path_length'] <> False: option_metrics['avg_geo_path_length'].append(0.0)
-            if option_metrics['avg_geo_path_length_of_components']<>False:option_metrics['avg_geo_path_length_of_components'].append(0.0)
+            if option_metrics['avg_geo_path_length_of_components']<>False:option_metrics['avg_geo_path_length_of_components'].append([0.0])
             if option_metrics['avg_geo_path_length_of_giant_component']<>False:option_metrics['avg_geo_path_length_of_giant_component'].append(0.0)
             if option_metrics['giant_component_size'] <> False: option_metrics['giant_component_size'].append(0)
             if option_metrics['avg_degree'] <> False: option_metrics['avg_degree'].append(0)
@@ -624,19 +624,19 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                             temp = []
                             for g in nx.connected_component_subgraphs(GA):
                                 temp.append(nx.average_shortest_path_length(g,length))
-                            if optionA['avg_geo_path_length']:
+                            if optionA['avg_geo_path_length']==True:
                                 avg=0
                                 for val in temp:
                                     avg+=val
                                 optionA['avg_geo_path_length']=[avg/len(temp)]
-                            if optionA['avg_geo_path_length_of_components']:
+                            if optionA['avg_geo_path_length_of_components']==True:
                                 optionA['avg_geo_path_length_of_components']=[temp]
-                            if optionA['avg_geo_path_length_of_giant_component']:
+                            if optionA['avg_geo_path_length_of_giant_component']==True:
                                 optionA['avg_geo_path_length_of_giant_component']=[temp[0]]
                             break
-                optionA['avg_geo_path_length']=[None]
-                optionA['avg_geo_path_length_of_components']=[None]
-                optionA['avg_geo_path_length_of_giant_component']=[None]
+                if optionA['avg_geo_path_length']== True:optionA['avg_geo_path_length']=[None]
+                if optionA['avg_geo_path_length_of_components']==True: optionA['avg_geo_path_length_of_components']=[None]
+                if optionA['avg_geo_path_length_of_giant_component']==True: optionA['avg_geo_path_length_of_giant_component']=[None]
                 break
             break
             
@@ -733,19 +733,20 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, length, 
                                 temp = []
                                 for g in nx.connected_component_subgraphs(GB):
                                     temp.append(nx.average_shortest_path_length(g,length))
-                                if optionB['avg_geo_path_length']:
+                                if optionB['avg_geo_path_length']==True:
                                     avg=0
                                     for val in temp:
                                         avg+=val
                                     optionB['avg_geo_path_length']=[avg/len(temp)]
-                                if optionB['avg_geo_path_length_of_components']:
+                                if optionB['avg_geo_path_length_of_components']==True:
                                     optionB['avg_geo_path_length_of_components']=[temp]
-                                if optionB['avg_geo_path_length_of_giant_component']:
+                                if optionB['avg_geo_path_length_of_giant_component']==True:
                                     optionB['avg_geo_path_length_of_giant_component']=[temp[0]]
                                 break
-                    optionB['avg_geo_path_length']=[None]
-                    optionB['avg_geo_path_length_of_components']=[None]
-                    optionB['avg_geo_path_length_of_giant_component']=[None]
+                    
+                    if optionB['avg_geo_path_length']==True:optionB['avg_geo_path_length']=[None]
+                    if optionB['avg_geo_path_length_of_components']==True:optionB['avg_geo_path_length_of_components']=[None]
+                    if optionB['avg_geo_path_length_of_giant_component']==True:optionB['avg_geo_path_length_of_giant_component']=[None]
                     break
                 break
             

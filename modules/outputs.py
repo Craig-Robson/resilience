@@ -106,7 +106,7 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
         for keys in optionA:
             if optionA[keys]<>False and optionA[keys]<>True:
                 try:
-                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_geo_path_length_of_components':
+                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components':
                         if optionA[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))        
                         else:
                             if len(optionA[keys][i])==1:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionA[keys][i]),i))
@@ -124,6 +124,8 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
                     else:
                         conn.ExecuteSQL("""UPDATE network_a SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
                         print "Error occured when writing values to database for network 'a' where the key is '%s'" %(keys)
+                        print "Error when values were:", optionA[keys][i]
+                        print "Data list is:", optionA[keys]
         if not STAND_ALONE:
             #if dependency or interdependency
             #---------------write basic metrics out----------------------------
@@ -141,7 +143,7 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
             for keys in optionB:
                 if optionB[keys]<>False and optionB[keys]<>True:
                     try:
-                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_geo_path_length_of_components':
+                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components':
                             if optionB[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_b SET %s='{}' WHERE time_step=%s""" %(keys,i))
                             elif len(optionB[keys][i])==1:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionB[keys][i]),i))
                             else:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
@@ -156,11 +158,9 @@ def write_results_table(basicA,optionA,basicB,optionB,i,STAND_ALONE,db_parameter
                             conn.ExecuteSQL("""UPDATE network_b SET %s= ARRAY %s WHERE time_step=%s""" %(keys,subnd,i))
                         else:
                             conn.ExecuteSQL("""UPDATE network_b SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
-                            print "Error occured when writing values to database for network 'b' where the key is '%s'. i is %s - length of list is %s" %(keys,i,len(optionB[keys]))
-                            
+                            print "Error occured when writing values to database for network 'b' where the key is '%s'" %(keys)
     if k==-99:
-        #if last iteration rename tabkes to something more specific
-        print 'Renaming results tables'
+        #if last iteration rename tables to something more specific
         rename_db_table(conn,defaultA,table_name_new='results_'+net_name_a)
         if not STAND_ALONE:
             rename_db_table(conn,defaultB,table_name_new='results_'+net_name_b)
