@@ -107,7 +107,7 @@ def write_results_table(metrics,i,failure,db_parameters,k):
         for keys in optionA:
             if optionA[keys]<>False and optionA[keys]<>True:
                 try:
-                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components':
+                    if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components' or keys=='avg_degree_connectivity':
                         if optionA[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))        
                         else:
                             if len(optionA[keys][i])==1:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionA[keys][i]),i))
@@ -125,6 +125,8 @@ def write_results_table(metrics,i,failure,db_parameters,k):
                     else:
                         conn.ExecuteSQL("""UPDATE network_a SET %s='ERROR' WHERE time_step=%s""" %(keys,i))
                         print "Error occured when writing values to database for network 'a' where the key is '%s'" %(keys)
+                        print optionA[keys][i]
+                        exit()
 
         if not failure['stand_alone']:
             #if dependency or interdependency
@@ -143,7 +145,7 @@ def write_results_table(metrics,i,failure,db_parameters,k):
             for keys in optionB:
                 if optionB[keys]<>False and optionB[keys]<>True:
                     try:
-                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components':
+                        if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components' or keys=='avg_degree_connectivity':
                             if optionB[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_b SET %s='{}' WHERE time_step=%s""" %(keys,i))
                             elif len(optionB[keys][i])==1:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionB[keys][i]),i))
                             else:conn.ExecuteSQL("""UPDATE network_b SET %s=ARRAY %s WHERE time_step=%s""" %(keys,optionB[keys][i],i))
