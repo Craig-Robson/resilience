@@ -35,13 +35,21 @@ __year__ = "2014"
 __version__ = "5.3.2"
 
 #standard modules
+
 import sys, random
 import networkx as nx
-
+'''
 #custom modules
 sys.path.append("C:/a8243587_DATA/GitRepo/resilience/modules")
 sys.path.append("C:/Users/Craig/GitRepo/resilience/modules")
 import tools,error_classes,failure_methods,network_handling,outputs
+'''
+
+
+def import_modules(resil_mod_loc):
+    sys.path.append(resil_mod_loc)
+    global tools, error_classes, failure_methods, network_handling, outputs
+    import tools,error_classes,failure_methods,network_handling,outputs
 
 
 def main(GA, GB, parameters, logfilepath, viewfailure=False):

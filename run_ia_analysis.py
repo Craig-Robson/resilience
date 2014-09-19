@@ -15,12 +15,19 @@ import interdependency_analysis as ia
 #nx_pgnet module location
 nx_pgnet_location = "C:/a8243587_DATA/GitRepo/nx_pgnet"
 #nx_pgnet_location = "C:/Users/Craig/GitRepo/nx_pgnet"
+
 sys.path.append(nx_pgnet_location)
 import nx_pgnet
 
 #import subsidiary resilience modules
-sys.path.append("C:/a8243587_DATA/GitRepo/resilience/resilience_modules")
+resilience_mods= "C:/a8243587_DATA/GitRepo/resilience/modules"
+sys.path.append(resilience_mods)
 import tools
+
+#make modules accessable in ia module
+ia.import_modules(resilience_mods)
+
+#-------------------------------------------------------------------------
 
 failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
