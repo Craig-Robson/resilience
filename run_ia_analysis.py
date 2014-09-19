@@ -9,23 +9,30 @@ Created on Wed Apr 02 08:23:20 2014
 import networkx as nx
 import sys
 
+
+#read in config file to get file paths
+f = open("config.txt")
+for line in f.readlines():
+    if line[0:8]=="nx_pgnet":
+        line = line.split('\t')
+        nx_pgnet_location = line[1].strip()
+    elif line[0:10]=="resilience":
+        line = line.split("\t")
+        resil_mod_loc = line[1].strip()
+        resil_mod_loc = resil_mod_loc + str("/modules")
+                
 #import resilience module
 import interdependency_analysis as ia
-
-#nx_pgnet module location
-nx_pgnet_location = "C:/a8243587_DATA/GitRepo/nx_pgnet"
-#nx_pgnet_location = "C:/Users/Craig/GitRepo/nx_pgnet"
 
 sys.path.append(nx_pgnet_location)
 import nx_pgnet
 
 #import subsidiary resilience modules
-resilience_mods= "C:/a8243587_DATA/GitRepo/resilience/modules"
-sys.path.append(resilience_mods)
+sys.path.append(resil_mod_loc)
 import tools
 
 #make modules accessable in ia module
-ia.import_modules(resilience_mods)
+ia.import_modules(resil_mod_loc)
 
 #-------------------------------------------------------------------------
 
