@@ -556,25 +556,11 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 for val in temp.values():
                     avg+=val
                 option_metrics['avg_degree_centrality'].append(avg/len(temp))
-
-            if store_n_e_atts: Gtemp = node_edge_att_fields(Gtemp)
         
         #add the number of nodes left to the respective list
         basic_metrics['no_of_nodes'].append(Gtemp.number_of_nodes())
 
         return iterate,Gtemp,i,to_b_nodes,from_a_nodes,a_to_b_edges,node_list,basic_metrics,option_metrics 
-
-def node_edge_att_fields(Gtemp):
-    #---------add some metrics to the nodes and edges of the network-----------
-        
-    #Gtemp = tools.add_node_field(Gtemp,'degree',Gtemp.degree())
-    #Gtemp = tools.add_node_field(Gtemp,'betweenness_centrality',nx.betweenness_centrality(Gtemp))
-    #Gtemp = tools.add_node_field(Gtemp,'clustering',nx.clustering(Gtemp))
-    #Gtemp = tools.add_node_field(Gtemp,'square_clustering', nx.square_clustering(Gtemp))
-    #Gtemp = tools.add_node_field(Gtemp,'avg_neighbour_degree',nx.average_neighbor_degree(Gtemp))
-    
-    #Gtemp = tools.add_edge_field(Gtemp,'betweenness',nx.edge_betweenness_centrality(Gtemp))
-    return Gtemp
 
 def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_e_atts, length, a_to_b_edges):
     
