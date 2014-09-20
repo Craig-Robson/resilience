@@ -889,51 +889,27 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     return networks,metrics,graphparameters
     
     
-def default_parameters(fileName, failure_1 = None, failure_2 = None, failure_3 = None, basic_A = None, option_A = None, basic_B = None, option_B = None):
+def default_parameters(fileName, failure, basicA=None, optionA=None, basicB=None, optionB=None):
     #metrics
-    if basic_A <> None:
-        pass
-    else:
-        nodes_removed_A = True #nodes removed from network A
-        node_count_removed_A = True #count of ndoes removed from network A   
-        count_nodes_left_A = True #the number of nodes left in network A
-        number_of_edges_A = True #number of edges in the network
-        number_of_components_A = True #number of subgraphs/isolated nodes
-        basic_A = nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A
-    if option_A <> None:
-        pass
-    else:
-        size_of_components_A=False;giant_component_size_A=False;av_nodes_in_components_A=False;isolated_nodes_A=False;isolated_n_count_removed_A=False;subnodes_A=False;subnodes_count_A=False;path_length_A=False;av_path_length_components_A=False;giant_component_av_path_length_A=False;av_path_length_geo_A=False;average_degree_A=False;inter_removed_count_A=False
-        option_A = size_of_components_A,giant_component_size_A,av_nodes_in_components_A,isolated_nodes_A,isolated_n_count_removed_A,subnodes_A,subnodes_count_A,path_length_A,av_path_length_components_A,giant_component_av_path_length_A,av_path_length_geo_A,average_degree_A,inter_removed_count_A
-    if basic_B <> None:
-        pass
-    else:
-        basic_B = None
-    if option_B <> None:
-        pass
-    else:
-        option_B = None
+    if basicA <> None: pass
+    else: basicA = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,'no_of_edges':True,'no_of_components':True,'no_of_isolated_nodes':True,'isolated_nodes_removed':True,'nodes_selected_to_fail':True}
+    if optionA <> None: pass
+    else: optionA = {'size_of_components':False,'giant_component_size':False,'avg_size_of_components':False,'isolated_nodes':False,'no_of_isolated_nodes_removed':False,'subnodes':False,'no_of_subnodes':False,'avg_path_length':False,'avg_path_length_of_components':False,'avg_path_length_of_giant_component':False,'avg_geo_path_length':False,'avg_geo_path_length_of_components':False,'avg_geo_path_length_of_giant_component':False,'avg_degree':False,'density':False,'maximum_betweenness_centrality':False,'avg_betweenness_centrality':False,'assortativity_coefficient':False,'clustering_coefficient':False,'transitivity':False,'square_clustering':False,'avg_neighbor_degree':False,'avg_degree_connectivity':False,'avg_degree_centrality':False,'avg_closeness_centrality':False,'diameter':False}
+    if basicB <> None:pass
+    else: basicB = None
+    if optionB <> None:pass
+    else: optionB = None
     
-    metrics = basic_A,basic_B,option_A,option_B
+    dependency = None
+    cascading = None
+    metrics = basicA,basicB,optionA,optionB,dependency,cascading
+    failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
+        'single':False, 'sequential':True, 'cascading':False,
+        'random':True, 'degree':False, 'betweenness':False}
 
-    if failure_1 <> None:
-        STAND_ALONE,DEPENDENCY,INTERDEPENDENCY = failure_1
-    else:
-        STAND_ALONE = True;DEPENDENCY = False;INTERDEPENDENCY = False
-    if failure_2 <> None:
-        SINGLE,SEQUENTIAL,CASCADING = failure_2
-    else:
-        SINGLE = False;SEQUENTIAL = True;CASCADING = False
-    if failure_3 <> None:
-        RANDOM,DEGREE,BETWEENNESS = failure_3
-    else:   
-        RANDOM=True;DEGREE = False;BETWEENNESS = False
-        
-    REMOVE_SUBGRAPHS = False
-    REMOVE_ISOLATES = False
-    NO_ISOLATES = False
+    handling_variables={'remove_subgraphs':False,'remove_isolates':False,'no_isolates':False}
     a_to_b_edges = None
-    parameters=metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName, a_to_b_edges
+    parameters=metrics, failure, handling_variables, fileName, a_to_b_edges
     return parameters
     
 def outputresults(graphparameters, parameters, metrics, logfilepath=None,multiterations=False):
