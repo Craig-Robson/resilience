@@ -60,6 +60,8 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     Input: up to two networks, parameters and a logfile path.
     Returns: a boolean varalible stating if the analysis has been completed.
     '''
+    import_modules("C:/a8243587_DATA/GitRepo/resilience/modules")
+        
     metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters
     
     #------set up the metrics for the analysis being asked for-----------------
@@ -80,7 +82,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     #-----------------write networks to database t = 0-------------------------
     #print networks
     #exit()
-    #networks=GA,GB,GA,GB
+    #GA,GB,GA,GB=networks
     if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
     #-----------------write metrics to database table t = 0--------------------  
     if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k=0)
@@ -128,6 +130,8 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     basicA,basicB,optionA,optionB,dependency,cascading = metrics
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     GA, GB, GtempA, GtempB = networks
+
+    print "137:",GtempA.number_of_nodes()
     
     #----------------perform the analsis---------------------------------------
     #----------------for sequential analysis only------------------------------
@@ -228,8 +232,32 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         #------------run for all other analysis scenarios--------------------
         else:
             if GtempA.number_of_edges()>0:
-                #check for isolates if requested and subgraphs
-                '''
+                #check here if any nodes are no longer connected to source nodes
+                must_connect_to_source = True
+                if must_connect_to_source == True:
+                    #list of source nodes
+                    source_nodes = (97,82,85,90,65,64,32,25)
+                    #check is all nodes are linked to a source node
+                    #use has_path
+                    #loop through all nodes:origins
+                    for nd in GtempA.nodes():
+                        connected = False
+                        for sn in source_nodes:
+                            #for each check path to a source
+                            if nx.has_path(nd,sn) == True:
+                                #break if has_path returns True
+                                connected = True
+                                break
+                            
+                        #if false for all, then remove from network
+                        if connected == False:
+                            GtempA.remove_node(nd)
+                            #need to record this in some way - a new dependency metric???
+                        
+                    #will also need to check if a source node has been removed from the network due to failure/being isolated/part of subgraph
+                
+                '''    
+                #check for isolates if requested and subgraphs                
                 if handling_variables['remove_isolates']==True:
                     GtempA,node_list,basicA,optionA,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(GtempA,node_list,optionA,basicA,to_b_nodes,from_a_nodes,a_to_b_edges,net='A')
                     if optionA['isolated_nodes'] <> False: optionA['isolated_nodes'].append(isolatednodes)
