@@ -22,11 +22,17 @@ def check_node_removed(node, isolated_nodes):
     h = 0   
     #for all isoalted nodes, check if node is part of the list
     while h < len(isolated_nodes):
-        p = 0
-        while p < len(isolated_nodes[h]):
-             if node == isolated_nodes[h][p]:
+        if type(isolated_nodes[h]) == int:
+            if node == isolated_nodes[h]:
                     REMOVED = True
-             p += 1
+        else:
+            p = 0
+            print isolated_nodes[h]
+            print type(isolated_nodes[h])
+            while p < len(isolated_nodes[h]):
+                 if node == isolated_nodes[h][p]:
+                        REMOVED = True
+                 p += 1
         h += 1
     return REMOVED
               
@@ -128,7 +134,9 @@ def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB
                     a_to_b_edges.pop(z)
                     nodes_removed_from_b.append(edge[1])
                     z-=1
-                else: raise error_classes.SearchError('Error. Node has already been removed.')
+                else:
+                    pass
+                    #raise error_classes.SearchError('Error. Node has already been removed.')
             z += 1                
                  
     networks =  GA, GB, GtempA, GtempB

@@ -235,23 +235,21 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 #check here if any nodes are no longer connected to source nodes
                 must_connect_to_source = True
                 if must_connect_to_source == True:
-                    #list of source nodes
+                    #list of source nodes - every node in net should be linked to one of these - if not then remove it
                     source_nodes = (97,82,85,90,65,64,32,25)
-                    #check is all nodes are linked to a source node
-                    #use has_path
                     #loop through all nodes:origins
                     for nd in GtempA.nodes():
                         connected = False
                         for sn in source_nodes:
                             #for each check path to a source
-                            if nx.has_path(nd,sn) == True:
+                            if nx.has_path(GtempA,nd,sn) == True:
                                 #break if has_path returns True
                                 connected = True
                                 break
                             
                         #if false for all, then remove from network
                         if connected == False:
-                            GtempA.remove_node(nd)
+                            GtempA.remove_node(nd) 
                             #need to record this in some way - a new dependency metric???
                         
                     #will also need to check if a source node has been removed from the network due to failure/being isolated/part of subgraph
