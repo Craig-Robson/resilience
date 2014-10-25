@@ -130,8 +130,6 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     basicA,basicB,optionA,optionB,dependency,cascading = metrics
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     GA, GB, GtempA, GtempB = networks
-
-    print "137:",GtempA.number_of_nodes()
     
     #----------------perform the analsis---------------------------------------
     #----------------for sequential analysis only------------------------------
@@ -231,12 +229,28 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 x += 1
         #------------run for all other analysis scenarios--------------------
         else:
+            f=open("C:/a8243587_DATA/checking_paths_%s.txt"%i,'a')
             if GtempA.number_of_edges()>0:
                 #check here if any nodes are no longer connected to source nodes
+                nodes_removed=[]
                 must_connect_to_source = True
                 if must_connect_to_source == True:
-                    #list of source nodes - every node in net should be linked to one of these - if not then remove it
-                    source_nodes = (97,82,85,90,65,64,32,25)
+                    #list of posible source nodes - every node in net should be linked to one of these - if not then remove it
+                    #pos_nodes = (55,32,64,65,90,82,81,2,22)
+                    pos_nodes = (57,58,66,67,89,39,43,55,2)
+                    source_nodes = []
+                    #check source nodes still in network and adds to list
+                    for sn in pos_nodes:
+                        found_node=False
+                        for nd in GtempA.nodes():
+                            if sn == nd:
+                                found_node=True
+                                break
+                        if found_node==True:
+                            source_nodes.append(sn)
+                    
+                    print "Source nodes =", source_nodes
+                    print "Network nodes=", GtempA.nodes()
                     #loop through all nodes:origins
                     for nd in GtempA.nodes():
                         connected = False
@@ -244,28 +258,19 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                             #for each check path to a source
                             if nx.has_path(GtempA,nd,sn) == True:
                                 #break if has_path returns True
+                                f.write("Path found betwenn nodes, %s ,%s\n" %(nd,sn))
                                 connected = True
                                 break
-                            
+                            else:
+                                f.write("No path between nodes, %s, %s\n" %(nd,sn))
                         #if false for all, then remove from network
                         if connected == False:
                             GtempA.remove_node(nd) 
+                            nodes_removed.append(nd)
                             #need to record this in some way - a new dependency metric???
-                        
-                    #will also need to check if a source node has been removed from the network due to failure/being isolated/part of subgraph
-                
-                '''    
-                #check for isolates if requested and subgraphs                
-                if handling_variables['remove_isolates']==True:
-                    GtempA,node_list,basicA,optionA,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(GtempA,node_list,optionA,basicA,to_b_nodes,from_a_nodes,a_to_b_edges,net='A')
-                    if optionA['isolated_nodes'] <> False: optionA['isolated_nodes'].append(isolatednodes)
-                    if optionA['no_of_isolated_nodes_removed'] <> False: optionA['no_of_isolated_nodes_removed'].append(len(isolatednodes))
-                    print 'adding info to basic isolated nodes here (in step)'
-                    basicA['isolated_nodes_removed'].append(isolatednodes)
-                    basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'].pop()+len(isolatednodes))
-                else:isolatednodes=[]
-                '''
-                nodes_removed=[node]
+                print "Nodes removed as not connected to a source:", nodes_removed
+                f.close()
+                nodes_removed.append(node)
                 #for nd in isolatednodes:nodes_removed.append(nd)
                 
                 #checking dependency edges
@@ -290,7 +295,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         GA, GB, GtempA, GtempB = networks
         
         #------------run the actual analysis---------------------------------
-        #analyse network B        
+        #analyse network B
         iterate,GtempB,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicB,optionB = analysis_B(parameters,iterate,GtempB,i,to_b_nodes,from_a_nodes,node_list,basicB,optionB,to_b_nodes,from_a_nodes,net='B')
         #analyse network A
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,net='A') #run the analysis        
@@ -418,6 +423,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             option_metrics['size_of_components'].append(temp)
         
         if option_metrics['avg_size_of_components'] <> False:
+            print Gtemp.number_of_nodes()
             option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/float(len(nx.connected_component_subgraphs(Gtemp))))
         
         if option_metrics['maximum_betweenness_centrality']<>False or option_metrics['avg_betweenness_centrality']<>False:
