@@ -62,7 +62,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     '''
     import_modules("C:/a8243587_DATA/GitRepo/resilience/modules")
         
-    metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters
+    metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes=parameters
     
     #------set up the metrics for the analysis being asked for-----------------
     networks,metrics,graphparameters = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges)
@@ -88,7 +88,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k=0)
     i +=1
     
-    graphparameters=networks,i,node_list,to_b_nodes,from_a_nodes
+    graphparameters=networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes
     #run the analysis if seuquential or cascading == true
     if failure['sequential']==True or failure['cascading']== True:
         #while iterate is still true- network still has edges eleft
@@ -101,7 +101,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
             graphparameters,parameters,metrics,iterate = step(graphparameters,parameters,metrics,iterate,logfilepath)
             #-------------unpack variables-------------------------------------
             basicA,basicB,optionA,optionB,interdependency,cascading = metrics
-            networks,k,node_list,to_b_nodes,from_a_nodes = graphparameters
+            networks,k,node_list,to_b_nodes,from_a_nodes,source_nodes = graphparameters
             #-------------write networks to database---------------------------
             if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)    
             #-------------write metrics to database table----------------------  
@@ -115,6 +115,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
             outputs.outputresults(graphparameters,parameters,metrics,logfilepath=None)
             
     complete = True
+    print "Completed simulation"
     #update log file - only works if file path is set
     tools.write_to_log_file(logfilepath,'completed analysis')
     return complete
@@ -128,7 +129,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     #----------------unpack all the data containers----------------------------
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
     basicA,basicB,optionA,optionB,dependency,cascading = metrics
-    networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
+    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes = graphparameters
     GA, GB, GtempA, GtempB = networks
     
     #----------------perform the analsis---------------------------------------
@@ -149,6 +150,12 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             GtempA,node = failure_methods.sequential_random(GtempA, handling_variables['no_isolates'],failure['interdependency'])
         #update the counter
         basicA['no_of_nodes_removed'].append(len(basicA['no_of_nodes_removed']))
+        #-----removes source node from list if it is the selected node
+        if source_nodes != None:
+            for nd in source_nodes:
+                if node == nd:
+                    source_nodes.remove(node)
+                    break
         
     #----------------for cascading analysis------------------------------------
     elif failure['cascading'] and failure['single']==False and failure['sequential']==False: 
@@ -236,19 +243,17 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 must_connect_to_source = True
                 if must_connect_to_source == True:
                     #list of posible source nodes - every node in net should be linked to one of these - if not then remove it
-                    #pos_nodes = (55,32,64,65,90,82,81,2,22)
-                    pos_nodes = (57,58,66,67,89,39,43,55,2)
-                    source_nodes = []
-                    #check source nodes still in network and adds to list
-                    for sn in pos_nodes:
+                    pos_nodes = []
+                    #check source nodes still in network and adds to list - will get rid of this eventually once fully integrated
+                    for sn in source_nodes:
                         found_node=False
                         for nd in GtempA.nodes():
                             if sn == nd:
                                 found_node=True
                                 break
                         if found_node==True:
-                            source_nodes.append(sn)
-                    
+                            pos_nodes.append(sn)
+                    source_nodes = pos_nodes
                     print "Source nodes =", source_nodes
                     print "Network nodes=", GtempA.nodes()
                     #loop through all nodes:origins
@@ -316,10 +321,9 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     #----------------re-package all data into respective containers------------
     networks = GA, GB, GtempA, GtempB
     metrics = basicA,basicB,optionA, optionB,dependency,cascading
-    graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes
+    graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes
     parameters =  failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     
-    GA,GB,GtempA,GtempB = networks
     return graphparameters,parameters,metrics,iterate
  
 '''calcualte values at end of step'''       
@@ -421,10 +425,6 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             for g in nx.connected_component_subgraphs(Gtemp):
                 temp.append(g.number_of_nodes())
             option_metrics['size_of_components'].append(temp)
-        
-        if option_metrics['avg_size_of_components'] <> False:
-            print Gtemp.number_of_nodes()
-            option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/float(len(nx.connected_component_subgraphs(Gtemp))))
         
         if option_metrics['maximum_betweenness_centrality']<>False or option_metrics['avg_betweenness_centrality']<>False:
             temp = nx.betweenness_centrality(Gtemp)
@@ -564,6 +564,9 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if option_metrics['giant_component_size'] <> False: 
                 #gets the size of the largest connected component
                 option_metrics['giant_component_size'].append((nx.connected_component_subgraphs(Gtemp)[0]).number_of_nodes()) #get the number of ndoes in the largest component
+            
+            if option_metrics['avg_size_of_components'] <> False:
+                option_metrics['avg_size_of_components'].append(Gtemp.number_of_nodes()/float(len(nx.connected_component_subgraphs(Gtemp))))
             
             #add the number of edges to the respective list
             basic_metrics['no_of_edges'].append(Gtemp.number_of_edges())

@@ -38,7 +38,7 @@ ia.import_modules(resil_mod_loc)
 
 failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
-        'random':False, 'degree':False, 'betweenness':True}
+        'random':False, 'degree':True, 'betweenness':False, 'from_list':False}
 
 #------------------analysis parameters-------------------------------------
 #REMOVE_SUBGRAPHS: When subgraphs appear, delete from network
@@ -47,8 +47,8 @@ failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
 handling_variables = {'remove_subgraphs':True,'remove_isolates':True,'no_isolates':False}  
 
 #------------------setting of data input type------------------------------
-use_nx_single = False
-use_db = True
+use_nx_single = True
+use_db = False
 use_csv = False
 mass = False
 
@@ -108,13 +108,16 @@ write_step_to_db = True
 
 #------------------setting of dependency edges-----------------------------
 if failure['dependency'] == True or failure['interdependency'] == True:
-    a_to_b_edges = [(3,1),(3,2),(5,3),(34,45),(24,89),(35,245),(54,345),(54,101),(78,254),(65,289),(32,198),(92,312)]
+    #a_to_b_edges = [(3,1),(3,2),(5,3),(34,45),(24,89),(35,245),(54,345),(54,101),(78,254),(65,289),(32,198),(92,312)]
+    a_to_b_edges = [(3,1),(3,2),(5,3),(34,12)]#,(24,36),(35,245),(54,345),(54,101),(78,254),(65,289),(32,198),(92,312)]
     #fromSQL='SELECT "p" FROM "Inter_Lines"
     #toSQL='SELECT "t" FROM "Inter_Lines"
     if failure['interdependency'] == True:
         b_to_a_edges = []
 else:
     a_to_b_edges = None  
+
+source_nodes = [2,5,34]
 
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,
@@ -126,27 +129,27 @@ option_metrics_A = {'size_of_components':           True,
                     'avg_size_of_components':       True,
                     'isolated_nodes':               True,
                     'no_of_isolated_nodes_removed': True,
-                    'subnodes':                     True,
-                    'no_of_subnodes':               True,
-                    'avg_path_length':              True,
-                    'avg_path_length_of_components':True,
-                    'avg_path_length_of_giant_component':   True,
-                    'avg_geo_path_length':                  True,
-                    'avg_geo_path_length_of_components':    True,
-                    'avg_geo_path_length_of_giant_component':True,
-                    'avg_degree':                   True,
-                    'density':                      True,
-                    'maximum_betweenness_centrality':True,
-                    'avg_betweenness_centrality':   True,
-                    'assortativity_coefficient':    True,
-                    'clustering_coefficient':       True,
-                    'transitivity':                 True,
-                    'square_clustering':            True,
-                    'avg_neighbor_degree':          True,
-                    'avg_degree_connectivity':      True,
-                    'avg_degree_centrality':        True,
-                    'avg_closeness_centrality':     True,
-                    'diameter':                     True
+                    'subnodes':                     False,
+                    'no_of_subnodes':               False,
+                    'avg_path_length':              False,
+                    'avg_path_length_of_components':False,
+                    'avg_path_length_of_giant_component':   False,
+                    'avg_geo_path_length':                  False,
+                    'avg_geo_path_length_of_components':    False,
+                    'avg_geo_path_length_of_giant_component':False,
+                    'avg_degree':                   False,
+                    'density':                      False,
+                    'maximum_betweenness_centrality':False,
+                    'avg_betweenness_centrality':   False,
+                    'assortativity_coefficient':    False,
+                    'clustering_coefficient':       False,
+                    'transitivity':                 False,
+                    'square_clustering':            False,
+                    'avg_neighbor_degree':          False,
+                    'avg_degree_connectivity':      False,
+                    'avg_degree_centrality':        False,
+                    'avg_closeness_centrality':     False,
+                    'diameter':                     False
                     }
 
 if failure['stand_alone'] == False:
@@ -176,16 +179,16 @@ if failure['cascading']==True: print 'WARNING! This functionality has not been t
 #------------------analysis methods----------------------------------------
 if use_nx_single == True:
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
     complete = ia.main(GA, GB, parameters,logfilepath)
 elif use_csv == True:
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
     NETWORK_NAME = file_1_name, file_2_name #list the name of the two networks for the analysis
     conn = None; noia = 1
     ia.analyse_existing_networks(NETWORK_NAME,conn,dbname,parameters,noia,use_db,use_csv)
 elif use_db == True:
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
     conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     import ogr
     conn = ogr.Open(conn)
@@ -202,7 +205,7 @@ elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     er = False; gnm = False; ws = False; ba = False
     hra = False; hr = False; hc = False; tree = True
     noioa = 5   #number_of_iterations_of_analysis
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
 
     if air== True:
         db = 'air'
