@@ -176,6 +176,31 @@ def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
             v += 1
         return node_list, to_b_nodes, from_a_nodes
 
+def check_connected_to_source_nodes(Gtemp, source_nodes,nodes_removed):
+    """
+    Given a network and a list of source nodes, checks they are still connected
+    to a source. If not they are removed from the network and recorded.
+    """
+    
+    #check if any nodes are no longer connected to source nodes
+    print "Source nodes A =", source_nodes
+    print "Network nodes A =", Gtemp.nodes()
+    #loop through all nodes:origins
+    for nd in Gtemp.nodes():
+        connected = False
+        for sn in source_nodes:
+            #for each check path to a source
+            if nx.has_path(Gtemp,nd,sn) == True:
+                #break if has_path returns True
+                connected = True
+                break
+        #if false for all, then remove from network and add to removed list
+        if connected == False:
+            Gtemp.remove_node(nd) 
+            nodes_removed.append(nd)
+    return Gtemp, nodes_removed
+
+
 def whole_graph_av_path_length(Gtemp,length=''):
     'Calcualte the average path length the whole network when it is made up of many subgraphs. *This is outdated by easier methods within the code blocks themeselves.'
     #create the required varaibles

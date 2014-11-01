@@ -242,22 +242,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 nodes_removed=[]
                 #are we using source nodes
                 if source_nodes_A != None:
-                    #check if any nodes are no longer connected to source nodes
-                    print "Source nodes A =", source_nodes_A
-                    print "Network nodes A =", GtempA.nodes()
-                    #loop through all nodes:origins
-                    for nd in GtempA.nodes():
-                        connected = False
-                        for sn in source_nodes_A:
-                            #for each check path to a source
-                            if nx.has_path(GtempA,nd,sn) == True:
-                                #break if has_path returns True
-                                connected = True
-                                break
-                        #if false for all, then remove from network and add to removed list
-                        if connected == False:
-                            GtempA.remove_node(nd) 
-                            nodes_removed.append(nd)
+                    GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
                     #need to record nodes removd in some way???
                     print "Nodes removed from A as not connected to a source:", nodes_removed
                 
@@ -291,23 +276,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             if GtempB.number_of_edges() != 0:
                 if source_nodes_B != None:
                     nodes_removed=[]
-                    #check if any nodes are no longer connected to source nodes
-                    print "Source nodes B =", source_nodes_B
-                    print "Network nodes B =", GtempB.nodes()
-                    #loop through all nodes:origins
-                    for nd in GtempB.nodes():
-                        connected = False
-                        for sn in source_nodes_B:
-                            #for each check path to a source
-                            if nx.has_path(GtempB,nd,sn) == True:
-                                #break if has_path returns True
-                                connected = True
-                                break
-                        #if false for all, then remove from network and add to removed list
-                        if connected == False:
-                            GtempB.remove_node(nd) 
-                            nodes_removed.append(nd)
-                            #need to record this in some way - a new dependency metric???
+                    GtempB,nodes_removed = network_handling.check_connected_to_source_nodes(GtempB,source_nodes_B,nodes_removed)
                     print "Nodes removed from B as not connected to a source:", nodes_removed
                     #need so sort out what metrics the nodes removed are need to be added to
                     
@@ -324,6 +293,14 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         i += 1   
         
     elif failure['stand_alone'] and failure['dependency']==False and failure['interdependency']==False :
+        if GtempA.number_of_edges() != 0:
+                #check all nodes still contected to a source node if set
+                if source_nodes_A != None:
+                    nodes_removed=[]
+                    GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
+                    print "Nodes removed from A as not connected to a source:", nodes_removed
+                    #need so sort out what metrics the nodes removed are need to be added to
+        
         #run the analysis
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,net='A') #run the analysis
         if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
