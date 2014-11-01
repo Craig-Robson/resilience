@@ -324,7 +324,13 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             if optionA['failed_no_con_to_a_source'] != False: optionA['failed_no_con_to_a_source'].append([])
         #run the analysis
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,net='A') #run the analysis
-        if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
+        if i <> -100:
+            basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
+            basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+optionA['failed_no_con_to_a_source'][i])
+            if optionA['failed_no_con_to_a_source'] != None:
+                basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'].pop()+len(optionA['failed_no_con_to_a_source'][i]))
+
+
         i += 1  
     else:
         raise error_classes.GeneralError('Error. No analysis type has been selected.')
