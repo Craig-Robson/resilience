@@ -116,8 +116,11 @@ if failure['dependency'] == True or failure['interdependency'] == True:
         b_to_a_edges = []
 else:
     a_to_b_edges = None  
+#------------------source nodes for networks--------------------------------
+#source_nodes_A = None
+source_nodes_A = [2,5,34]
 
-source_nodes = [2,5,34]
+source_nodes_B = None
 
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,
@@ -179,16 +182,16 @@ if failure['cascading']==True: print 'WARNING! This functionality has not been t
 #------------------analysis methods----------------------------------------
 if use_nx_single == True:
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B
     complete = ia.main(GA, GB, parameters,logfilepath)
 elif use_csv == True:
     write_results_table=False;store_n_e_atts=False;write_step_to_db=False
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B
     NETWORK_NAME = file_1_name, file_2_name #list the name of the two networks for the analysis
     conn = None; noia = 1
     ia.analyse_existing_networks(NETWORK_NAME,conn,dbname,parameters,noia,use_db,use_csv)
 elif use_db == True:
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B
     conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     import ogr
     conn = ogr.Open(conn)
@@ -205,7 +208,7 @@ elif mass == True and failure['stand_alone'] == True: #for mass single analysis
     er = False; gnm = False; ws = False; ba = False
     hra = False; hr = False; hc = False; tree = True
     noioa = 5   #number_of_iterations_of_analysis
-    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes
+    parameters = metrics,failure,handling_variables,result_file,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B
 
     if air== True:
         db = 'air'

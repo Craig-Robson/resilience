@@ -234,7 +234,7 @@ def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiter
     Returns: all sets of metrics in a single container '''
     error = None
     #unpacking the variables
-    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes = graphparameters
+    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B = graphparameters
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
     basicA,basicB,optionA,optionB,dependency,cascading=metrics
     #if more than one simualtion has been run over the same network
@@ -528,7 +528,7 @@ def txtout(outputfile,graphparameters, parameters,metrics):
     Returns: Nothing'''
     #unpack the variables
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
-    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes = graphparameters 
+    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B = graphparameters 
     GA, GB, GtempA, GtempB = networks
     basicA,basicB,optionA,optionB,dependency,cascading=metrics
 
