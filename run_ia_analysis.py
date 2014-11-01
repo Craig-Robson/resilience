@@ -119,8 +119,7 @@ else:
 #------------------source nodes for networks--------------------------------
 #source_nodes_A = None
 source_nodes_A = [2,5,34]
-
-source_nodes_B = None
+source_nodes_B = [12,1,2]
 
 #------------------compile metrics into variables--------------------------
 basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,

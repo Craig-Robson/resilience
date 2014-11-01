@@ -238,15 +238,13 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 x += 1
         #------------run for all other analysis scenarios--------------------
         else:
-            f=open("C:/a8243587_DATA/checking_paths_%s.txt"%i,'a')
-            if GtempA.number_of_edges()>0:
-                
+            if GtempA.number_of_edges() != 0:
                 nodes_removed=[]
                 #are we using source nodes
                 if source_nodes_A != None:
                     #check if any nodes are no longer connected to source nodes
-                    print "Source nodes =", source_nodes_A
-                    print "Network nodes=", GtempA.nodes()
+                    print "Source nodes A =", source_nodes_A
+                    print "Network nodes A =", GtempA.nodes()
                     #loop through all nodes:origins
                     for nd in GtempA.nodes():
                         connected = False
@@ -254,19 +252,15 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                             #for each check path to a source
                             if nx.has_path(GtempA,nd,sn) == True:
                                 #break if has_path returns True
-                                f.write("Path found betwenn nodes, %s ,%s\n" %(nd,sn))
                                 connected = True
                                 break
-                            else:
-                                f.write("No path between nodes, %s, %s\n" %(nd,sn))
-                        #if false for all, then remove from network
+                        #if false for all, then remove from network and add to removed list
                         if connected == False:
                             GtempA.remove_node(nd) 
                             nodes_removed.append(nd)
-                            #need to record this in some way - a new dependency metric???
-                    print "Nodes removed as not connected to a source:", nodes_removed
-                    f.close()
-                    
+                    #need to record nodes removd in some way???
+                    print "Nodes removed from A as not connected to a source:", nodes_removed
+                
                 #add the selected node to remove to the list
                 nodes_removed.append(node)
                                
@@ -279,17 +273,44 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 else:
                     #un-pack variables returned                  
                     networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges = args
+                    GA, GB, GtempA, GtempB = networks
                     basicB['no_of_nodes_removed'].append(len(nodes_removed_from_b))  
                     basicB['nodes_removed'].append(nodes_removed_from_b)
                     dependency['no_of_nodes_removed_from_B'].append(len(nodes_removed_from_b))
                     dependency['nodes_removed_from_B'].append(nodes_removed_from_b)
+                    if source_nodes_B != None:
+                        print "Nodes removed from B due to dependencies:", nodes_removed_from_b
+                        for nd in nodes_removed_from_b:
+                            try: source_nodes_B.remove(nd)
+                            except:pass
             else:
                 basicB['nodes_removed'].append([])
                 dependency['nodes_removed_from_B'].append([])
                 dependency['no_of_nodes_removed_from_B'].append(0)
-                
-        #------------un-package networks-------------------------------------
-        GA, GB, GtempA, GtempB = networks
+            
+            if GtempB.number_of_edges() != 0:
+                if source_nodes_B != None:
+                    nodes_removed=[]
+                    #check if any nodes are no longer connected to source nodes
+                    print "Source nodes B =", source_nodes_B
+                    print "Network nodes B =", GtempB.nodes()
+                    #loop through all nodes:origins
+                    for nd in GtempB.nodes():
+                        connected = False
+                        for sn in source_nodes_B:
+                            #for each check path to a source
+                            if nx.has_path(GtempB,nd,sn) == True:
+                                #break if has_path returns True
+                                connected = True
+                                break
+                        #if false for all, then remove from network and add to removed list
+                        if connected == False:
+                            GtempB.remove_node(nd) 
+                            nodes_removed.append(nd)
+                            #need to record this in some way - a new dependency metric???
+                    print "Nodes removed from B as not connected to a source:", nodes_removed
+                    #need so sort out what metrics the nodes removed are need to be added to
+                    
         
         #------------run the actual analysis---------------------------------
         #analyse network B
