@@ -65,7 +65,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B=parameters
     
     #------set up the metrics for the analysis being asked for-----------------
-    networks,metrics,graphparameters = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges)
+    networks,metrics,graphparameters = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges,source_nodes_A,source_nodes_B)
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     basicA,basicB,optionA,optionB,interdependency_metrics,cascading_metrics = metrics
     parameters=failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
@@ -134,7 +134,6 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     
     #----------------perform the analsis---------------------------------------
     #----------------for sequential analysis only------------------------------
-    
     #look at adding ability to remove nodes from both A and B
     if failure['sequential'] and failure['single']==False and failure['cascading']==False:
         if failure['degree']:
@@ -152,6 +151,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             GtempA,node = failure_methods.sequential_random(GtempA, handling_variables['no_isolates'],failure['interdependency'])
         #update the counter
         basicA['no_of_nodes_removed'].append(len(basicA['no_of_nodes_removed']))
+
         #-----removes source node from list if it is the selected node
         if source_nodes_A != None:
             for nd in source_nodes_A:
@@ -243,9 +243,14 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 #are we using source nodes
                 if source_nodes_A != None:
                     GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
-                    #need to record nodes removd in some way???
-                    print "Nodes removed from A as not connected to a source:", nodes_removed
-                
+                    #write changes out to metrics
+                    if optionA['failed_no_con_to_a_source']!=False:
+                        optionA['failed_no_con_to_a_source'].append(nodes_removed)
+                    if optionA['source_nodes']!=False:
+                        temp=[]
+                        for nd in source_nodes_A: temp.append(nd)
+                        optionA['source_nodes'].append(temp)
+                        
                 #add the selected node to remove to the list
                 nodes_removed.append(node)
                                
@@ -263,8 +268,8 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                     basicB['nodes_removed'].append(nodes_removed_from_b)
                     dependency['no_of_nodes_removed_from_B'].append(len(nodes_removed_from_b))
                     dependency['nodes_removed_from_B'].append(nodes_removed_from_b)
+                    #check if any of the failed nodes are source nodes in B - remove from list if they are
                     if source_nodes_B != None:
-                        print "Nodes removed from B due to dependencies:", nodes_removed_from_b
                         for nd in nodes_removed_from_b:
                             try: source_nodes_B.remove(nd)
                             except:pass
@@ -272,14 +277,23 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 basicB['nodes_removed'].append([])
                 dependency['nodes_removed_from_B'].append([])
                 dependency['no_of_nodes_removed_from_B'].append(0)
+                if optionA['source_nodes'] != False: optionA.append([])
+                if optionA['failed_no_con_to_a_source'] != False: optionA.append([])
             
             if GtempB.number_of_edges() != 0:
                 if source_nodes_B != None:
                     nodes_removed=[]
-                    GtempB,nodes_removed = network_handling.check_connected_to_source_nodes(GtempB,source_nodes_B,nodes_removed)
-                    print "Nodes removed from B as not connected to a source:", nodes_removed
-                    #need so sort out what metrics the nodes removed are need to be added to
-                    
+                    GtempB,nodes_removed = network_handling.check_connected_to_source_nodes(GtempB,source_nodes_B,nodes_removed)                   
+                    #write out to some metrics
+                    if optionB['failed_no_con_to_a_source'] != False:
+                        optionB['failed_no_con_to_a_source'].append(nodes_removed)
+                    if optionB['source_nodes'] != False:
+                        temp=[]
+                        for nd in source_nodes_B: temp.append(nd)
+                        optionB['source_nodes'].append(temp)
+            else:
+                if optionB['source_nodes'] != False: optionB.append([])
+                if optionB['failed_no_con_to_a_source'] != False: optionB.append([])
         
         #------------run the actual analysis---------------------------------
         #analyse network B
@@ -294,13 +308,20 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         
     elif failure['stand_alone'] and failure['dependency']==False and failure['interdependency']==False :
         if GtempA.number_of_edges() != 0:
-                #check all nodes still contected to a source node if set
-                if source_nodes_A != None:
-                    nodes_removed=[]
-                    GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
-                    print "Nodes removed from A as not connected to a source:", nodes_removed
-                    #need so sort out what metrics the nodes removed are need to be added to
-        
+            #check all nodes still contected to a source node if set
+            if source_nodes_A != None:
+                nodes_removed=[]
+                GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
+                #write out to some metrics
+                if optionA['failed_no_con_to_a_source'] != False:
+                    optionA['failed_no_con_to_a_source'].append(nodes_removed)
+                if optionA['source_nodes'] != False:
+                    temp=[]
+                    for nd in source_nodes_A: temp.append(nd)
+                    optionA['source_nodes'].append(temp)
+        else:
+            if optionA['source_nodes'] != False: optionA['source_nodes'].append([])
+            if optionA['failed_no_con_to_a_source'] != False: optionA['failed_no_con_to_a_source'].append([])
         #run the analysis
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,net='A') #run the analysis
         if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
@@ -595,7 +616,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
 
         return iterate,Gtemp,i,to_b_nodes,from_a_nodes,a_to_b_edges,node_list,basic_metrics,option_metrics,source_nodes 
 
-def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_e_atts, length, a_to_b_edges):
+def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_e_atts, length, a_to_b_edges, source_nodes_A, source_nodes_B):
     
     #unpack the paarameter
     #----------------unpack the metrics----------------------------------------
@@ -658,6 +679,15 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         optionA['subnodes']=[[]] #nodes removed as part of isolated graphs
         optionA['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
 
+    if optionA['source_nodes']==True and source_nodes_A != None:
+        temp = []
+        for val in source_nodes_A: temp.append(val)
+        optionA['source_nodes']=[temp]
+    else: optionA['source_nodes']=False
+    if optionA['failed_no_con_to_a_source']==True and source_nodes_A != None:
+        optionA['failed_no_con_to_a_source']=[[]]
+    else: optionA['failed_no_con_to_a_source']=False
+    
     if optionA['avg_path_length']==True:optionA['avg_path_length']=[nx.average_shortest_path_length(GA)] 
     if optionA['avg_path_length_of_components']==True or optionA['avg_path_length_of_giant_component']==True:
         temp = []
@@ -775,6 +805,16 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         if handling_variables['remove_subgraphs']== True or optionB['subnodes']==True or optionB['no_of_subnodes']==True:
             optionB['subnodes']=[[]] #nodes removed as part of isolated graphs
             optionB['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
+        
+        if optionB['source_nodes']==True and source_nodes_A != None:
+            temp = []
+            for val in source_nodes_A: temp.append(val)
+            optionA['source_nodes']=[temp]
+        else: optionB['source_nodes']=False
+        if optionB['failed_no_con_to_a_source']==True:
+            optionB['failed_no_con_to_a_source']=[[]]
+        else: optionB['failed_no_con_to_a_source']=False
+                
         if optionB['density']==True:optionB['density']=[nx.density(GB)]
         
         if optionB['avg_path_length']==True:optionB['avg_path_length']=[nx.average_shortest_path_length(GB)] 

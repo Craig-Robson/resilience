@@ -183,8 +183,6 @@ def check_connected_to_source_nodes(Gtemp, source_nodes,nodes_removed):
     """
     
     #check if any nodes are no longer connected to source nodes
-    print "Source nodes A =", source_nodes
-    print "Network nodes A =", Gtemp.nodes()
     #loop through all nodes:origins
     for nd in Gtemp.nodes():
         connected = False
@@ -198,6 +196,7 @@ def check_connected_to_source_nodes(Gtemp, source_nodes,nodes_removed):
         if connected == False:
             Gtemp.remove_node(nd) 
             nodes_removed.append(nd)
+            
     return Gtemp, nodes_removed
 
 

@@ -36,7 +36,7 @@ ia.import_modules(resil_mod_loc)
 
 #-------------------------------------------------------------------------
 
-failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
+failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
         'random':False, 'degree':True, 'betweenness':False, 'from_list':False}
 
@@ -117,7 +117,8 @@ if failure['dependency'] == True or failure['interdependency'] == True:
 else:
     a_to_b_edges = None  
 #------------------source nodes for networks--------------------------------
-#source_nodes_A = None
+#set as None if not using these - functions will ignore them
+#if wanted eg. [2,56,34]
 source_nodes_A = [2,5,34]
 source_nodes_B = [12,1,2]
 
@@ -133,6 +134,8 @@ option_metrics_A = {'size_of_components':           True,
                     'no_of_isolated_nodes_removed': True,
                     'subnodes':                     False,
                     'no_of_subnodes':               False,
+                    'source_nodes':                 True,
+                    'failed_no_con_to_a_source':    True,
                     'avg_path_length':              False,
                     'avg_path_length_of_components':False,
                     'avg_path_length_of_giant_component':   False,
