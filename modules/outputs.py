@@ -472,7 +472,6 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['size_of_components'] <> False:
         outputfile.write('\nsize of each component,' + str(tools.replace_all(str(option['size_of_components']),{',':';','];':'],'})))
     if option['giant_component_size'] <> False:
-        print "Length of giant component", len(option['giant_component_size'])
         outputfile.write('\nnumber of nodes in giant component,' + str(option['giant_component_size']))
     if option['avg_size_of_components'] <> False:
         outputfile.write('\naverage size of components,' + str(option['avg_size_of_components']))
@@ -485,7 +484,6 @@ def write_text_file(outputfile,CASCADING,basic,option):
     if option['no_of_subnodes'] <> False:
         outputfile.write('\nnumber of subnodes,' + str(option['no_of_subnodes']))  
     if option['source_nodes'] <> False:
-        print "Length of source nodes",len(option['source_nodes'])
         outputfile.write('\nsource nodes,' + str(option['source_nodes']))
     if option['failed_no_con_to_a_source'] <> False:
         outputfile.write('\nfailed as no connection to a source,' + str(option['failed_no_con_to_a_source']))

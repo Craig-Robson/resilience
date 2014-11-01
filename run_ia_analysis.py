@@ -36,7 +36,7 @@ ia.import_modules(resil_mod_loc)
 
 #-------------------------------------------------------------------------
 
-failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
+failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
         'single':False, 'sequential':True, 'cascading':False,
         'random':False, 'degree':True, 'betweenness':False, 'from_list':False}
 
