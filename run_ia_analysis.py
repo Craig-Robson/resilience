@@ -36,8 +36,8 @@ ia.import_modules(resil_mod_loc)
 
 #-------------------------------------------------------------------------
 
-failure = {'stand_alone':False, 'dependency':True, 'interdependency':False,
-        'single':False, 'sequential':True, 'cascading':False,
+failure = {'stand_alone':True, 'dependency':False, 'interdependency':False,
+        'single':True, 'sequential':False, 'cascading':False,
         'random':False, 'degree':True, 'betweenness':False, 'from_list':False}
 
 #------------------analysis parameters-------------------------------------
@@ -119,7 +119,8 @@ else:
 #------------------source nodes for networks--------------------------------
 #set as None if not using these - functions will ignore them
 #if wanted eg. [2,56,34]
-source_nodes_A = [2,5,34]
+source_nodes_A = None
+#source_nodes_A = [2,5,34]
 source_nodes_B = [12,1,2]
 
 #------------------compile metrics into variables--------------------------

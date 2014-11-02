@@ -80,8 +80,6 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
         '''
         pass
     #-----------------write networks to database t = 0-------------------------
-    #print networks
-    #exit()
     #GA,GB,GA,GB=networks
     if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
     #-----------------write metrics to database table t = 0--------------------  
@@ -131,7 +129,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     basicA,basicB,optionA,optionB,dependency,cascading = metrics
     networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B = graphparameters
     GA, GB, GtempA, GtempB = networks
-    
+    print "in step"
     #----------------perform the analsis---------------------------------------
     #----------------for sequential analysis only------------------------------
     #look at adding ability to remove nodes from both A and B
@@ -192,8 +190,17 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             node = deadlist
         
         #update metric
-        basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'][i] + len(deadlist))
+        basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'][len(basicA['no_of_nodes_removed'])-1]+len(deadlist))
 
+
+        #-----removes source node from list if it is the selected node
+        if source_nodes_A != None:
+            for nd in source_nodes_A:
+                for nde in deadlist:
+                    if nde == nd:
+                        source_nodes_A.remove(nde)
+                        break
+                    
         #------------package cascading metrics together----------------------
         cascading = dead, dlist, removed_nodes, deadlist
 
@@ -207,9 +214,15 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         if node_list == []:
             iterate = False
         #update the metric
-        basicA['no_of_nodes_removed'].append(len(basicA['no_of_nodes_removed']))
-        #node_count_removed_A.append(len(node_count_removed_A))
-        
+        basicA['no_of_nodes_removed'].append(len(node))
+
+        #-----removes source node from list if it is the selected node
+        if source_nodes_A != None:
+            for nd in source_nodes_A:
+                if node == nd:
+                    source_nodes_A.remove(node)
+                    break
+                
     #----------------update the list of removed nodes--------------------------
     basicA['nodes_removed'].append([node])
     basicA['nodes_selected_to_fail'].append([node])
