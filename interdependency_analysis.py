@@ -88,7 +88,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     
     graphparameters=networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B
     #run the analysis if seuquential or cascading == true
-    if failure['sequential']==True or failure['cascading']== True:
+    if failure['sequential']==True or failure['cascading']==True or failure['stand_alone']==True:
         #while iterate is still true- network still has edges eleft
         while iterate == True:
             print '----------------------------------------------'
@@ -106,12 +106,18 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
             if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k)
             #-------------update log file (if file path set)-------------------
             tools.write_to_log_file(logfilepath,'step completed')
-            #-------------update i as iteration finished-----------------------
+            #-------------stop if stand alone and all nodes have been removed--
+            if failure['stand_alone']==True:
+                if i == networks[2].number_of_nodes(): iterate = False
+            #-------------update i as iteration finished-----------------------        
             i+=1
         if iterate == False:
             #no edges left so output results
             outputs.outputresults(graphparameters,parameters,metrics,logfilepath=None)
-            
+    elif failure['stand_alone']==True:
+        pass
+    else:
+        print "No analysis method selected"
     complete = True
     print "Completed simulation"
     #update log file - only works if file path is set
@@ -129,7 +135,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     basicA,basicB,optionA,optionB,dependency,cascading = metrics
     networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B = graphparameters
     GA, GB, GtempA, GtempB = networks
-    print "in step"
+    
     #----------------perform the analsis---------------------------------------
     #----------------for sequential analysis only------------------------------
     #look at adding ability to remove nodes from both A and B
@@ -214,7 +220,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         if node_list == []:
             iterate = False
         #update the metric
-        basicA['no_of_nodes_removed'].append(len(node))
+        basicA['no_of_nodes_removed'].append(1)
 
         #-----removes source node from list if it is the selected node
         if source_nodes_A != None:
@@ -316,9 +322,9 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,source_nodes_A,net='A')  
         
         if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
-        if optionA['failed_no_con_to_a_source'] != None:
+        if optionA['failed_no_con_to_a_source'] != False:
             basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'].pop()+len(optionA['failed_no_con_to_a_source'][len(optionA['failed_no_con_to_a_source'])-1]))
-        if optionB['failed_no_con_to_a_source'] != None:
+        if optionB['failed_no_con_to_a_source'] != False:
             basicB['no_of_nodes_removed'].append(basicB['no_of_nodes_removed'].pop()+len(optionB['failed_no_con_to_a_source'][len(optionB['failed_no_con_to_a_source'])-1]))
 
         #------------move counter on-----------------------------------------
@@ -343,10 +349,10 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         #run the analysis
         iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,net='A') #run the analysis
         if i <> -100:
-            print "I is: %s. Length of basicA no_of_nodes_removed is: %s." %(i,len(basicA['no_of_nodes_removed']))
             basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
+        if optionA['failed_no_con_to_a_source'] != False:
             basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+optionA['failed_no_con_to_a_source'][i])
-        if optionA['failed_no_con_to_a_source'] != None:
+        if optionA['failed_no_con_to_a_source'] != False:
             basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'].pop()+len(optionA['failed_no_con_to_a_source'][len(optionA['failed_no_con_to_a_source'])-1]))
 
         i += 1  
