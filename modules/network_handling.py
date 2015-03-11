@@ -89,10 +89,11 @@ def handle_sub_graphs(G):
     ''''Used for removing subgraphs from a network, but converting them to 
     node and edge lists so can be re-built for analysis purposes. Called from 
     analysis_B'''
+    U_G = None
     if G.is_directed() == True:
         U_G = G.to_undirected()
-    
-    subgraphlist = nx.connected_component_subgraphs(U_G) #create a list of subgraphs
+    if U_G == None: subgraphlist = nx.connected_component_subgraphs(G) #create a list of subgraphs
+    else: subgraphlist = nx.connected_component_subgraphs(U_G)
 
     subnodes = [] #list of subnodes
     numofsubnodes = 0 #to store the number of subnodes in total at each iteration

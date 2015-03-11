@@ -665,10 +665,12 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         GB = GnetB.copy()
         if GB.is_directed() == True:
             U_GB = GB.to_undirected()
+        else: U_GB = None
     else: GB = GnetB
 
     if GA.is_directed() == True:
         U_GA = GA.to_undirected()
+    else: U_GA = None
     #---------------------------set counter to---------------------------------
     i = 0
     #-------------------------basic metrics------------------------------------
@@ -676,7 +678,8 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     basicA['no_of_nodes_removed'] = [0]
     basicA['no_of_nodes'] = [GA.number_of_nodes()] #the number of nodes left in network A
     basicA['no_of_edges'] = [GA.number_of_edges()] #number of edges in the network
-    basicA['no_of_components'] = [nx.number_connected_components(U_GA)] #number of subgraphs
+    if U_GA == None: basicA['no_of_components'] = [nx.number_connected_components(GA)] #number of subgraphs
+    else: basicA['no_of_components'] = [nx.number_connected_components(U_GA)]
     basicA['no_of_isolated_nodes'] = [len(nx.isolates(GA))]
     basicA['isolated_nodes_removed'] = [[]]
     basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
@@ -686,7 +689,8 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         basicB['no_of_nodes_removed'] = [0]
         basicB['no_of_nodes'] = [GB.number_of_nodes()] #the number of nodes left in network A
         basicB['no_of_edges'] = [GB.number_of_edges()] #number of edges in the network
-        basicB['no_of_components'] = [nx.number_connected_components(U_GB)] #number of subgraphs
+        if U_GB == None: basicB['no_of_components'] = [nx.number_connected_components(GB)] #number of subgraphs
+        else: basicB['no_of_components'] = [nx.number_connected_components(U_GB)]
         basicB['no_of_isolated_nodes'] = [len(nx.isolates(GB))]
         basicB['isolated_nodes_removed'] = [[]]
     
@@ -700,13 +704,21 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         
     if optionA['size_of_components']==True:
         temp = []
-        for g in nx.connected_component_subgraphs(U_GA):
-            temp.append(g.number_of_nodes())
+        if U_GA == None:
+            for g in nx.connected_component_subgraphs(GA):
+                temp.append(g.number_of_nodes())
+        else:
+            for g in nx.connected_component_subgraphs(U_GA):
+                temp.append(g.number_of_nodes())
         optionA['size_of_components']=[temp]
     if optionA['giant_component_size']==True:
-        optionA['giant_component_size']=[(nx.connected_component_subgraphs(U_GA)[0]).number_of_nodes()]
+        if U_GA == None:
+            optionA['giant_component_size']=[(nx.connected_component_subgraphs(GA)[0]).number_of_nodes()]
+        else: optionA['giant_component_size']=[(nx.connected_component_subgraphs(U_GA)[0]).number_of_nodes()]
     if optionA['avg_size_of_components']==True:
-        optionA['avg_size_of_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(U_GA)))]
+        if U_GA == None:
+            optionA['avg_size_of_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(GA)))]
+        else: optionA['avg_size_of_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(U_GA)))]
     if optionA['isolated_nodes']==True:
         optionA['isolated_nodes']=[nx.isolates(GA)]
     if handling_variables['remove_isolates'] == True or optionA['no_of_isolated_nodes_removed'] == True:
@@ -825,13 +837,21 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     if failure['stand_alone'] == False:
         if optionB['size_of_components']==True:
             temp = []
-            for g in nx.connected_component_subgraphs(U+GB):
-                temp.append(g.number_of_nodes())
+            if U_GB == None:
+                for g in nx.connected_component_subgraphs(GB):
+                    temp.append(g.number_of_nodes())
+            else: 
+                for g in nx.connected_component_subgraphs(U_GB):
+                    temp.append(g.number_of_nodes())
             optionB['size_of_components']=[temp]
         if optionB['giant_component_size']==True:
-            optionB['giant_component_size']=[(nx.connected_component_subgraphs(U_GB)[0]).number_of_nodes()]
+            if U_GB == None:
+                optionB['giant_component_size']=[(nx.connected_component_subgraphs(GB)[0]).number_of_nodes()]
+            else: optionB['giant_component_size']=[(nx.connected_component_subgraphs(U_GB)[0]).number_of_nodes()]
         if optionB['avg_size_of_components']==True: 
-            optionB['avg_size_of_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(U_GB)))]
+            if U_GB == None:
+                optionB['avg_size_of_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
+            else: optionB['avg_size_of_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(U_GB)))]
         if optionB['isolated_nodes']==True:
             optionB['isolated_nodes']=[nx.isolates(GB)]
         if handling_variables['remove_isolates']==True or basicB['isolated_nodes_removed']==True:
