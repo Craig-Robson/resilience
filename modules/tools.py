@@ -220,3 +220,114 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
         ia.main(G1, G2, parameters,logfilepath)
     else:
         raise error_classes.GeneralError('Error. The STAND_ALONE variable must have a boolean value')
+        
+        
+def set_basic_parameters(failure):
+    #------------------compile metrics into variables--------------------------
+    basic_metrics_A = {'nodes_removed':True,'no_of_nodes_removed':True,'no_of_nodes':True,
+                   'no_of_edges':True,'no_of_components':True,
+                   'no_of_isolated_nodes':True,'isolated_nodes_removed':True,
+                   'nodes_selected_to_fail':True}
+    option_metrics_A = {'size_of_components':       True,
+                    'giant_component_size':         True,
+                    'avg_size_of_components':       True,
+                    'isolated_nodes':               True,
+                    'no_of_isolated_nodes_removed': True,
+                    'subnodes':                     False,
+                    'no_of_subnodes':               False,
+                    'source_nodes':                 True,
+                    'failed_no_con_to_a_source':    True,
+                    'avg_path_length':              False,
+                    'avg_path_length_of_components':False,
+                    'avg_path_length_of_giant_component':   False,
+                    'avg_geo_path_length':                  False,
+                    'avg_geo_path_length_of_components':    False,
+                    'avg_geo_path_length_of_giant_component':False,
+                    'avg_degree':                   False,
+                    'density':                      False,
+                    'maximum_betweenness_centrality':False,
+                    'avg_betweenness_centrality':   False,
+                    'assortativity_coefficient':    False,
+                    'clustering_coefficient':       False,
+                    'transitivity':                 False,
+                    'square_clustering':            False,
+                    'avg_neighbor_degree':          False,
+                    'avg_degree_connectivity':      False,
+                    'avg_degree_centrality':        False,
+                    'avg_closeness_centrality':     False,
+                    'diameter':                     False
+                    }
+                    
+    if failure['stand_alone'] == False:
+        basic_metrics_B = basic_metrics_A.copy()
+        option_metrics_B = option_metrics_A.copy()
+        basic_metrics_B['nodes_selected_to_fail']=False
+    else: basic_metrics_B = None; option_metrics_B = None
+    
+    dependency = None
+    cascading = None
+    metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B, dependency, cascading
+    
+    return metrics
+    
+def set_failure_dict(analysis_type,failure_type,selection_type): 
+    '''
+    Takes three inputs (strings):
+        analysis_type: stand_alone, dependency, interdependency
+        failure_type: single, sequential, cascading
+        selection_type: random, degree, betweenness
+    '''
+    failure = {}
+    if analysis_type == 'stand_alone':
+        failure['stand_alone']=True
+        failure['dependency']=False
+        failure['interdependency']=False
+    elif analysis_type == 'dependency':
+        failure['stand_alone']=False
+        failure['dependency']=True
+        failure['interdependency']=False
+    elif analysis_type == 'interdependency':
+        failure['stand_alone']=False
+        failure['dependency']=False
+        failure['interdependency']=True
+    else:
+        print 'Could not assign the analysis_type %s to one of the available methods.' %analysis_type
+    if failure_type == 'single':
+        failure['single']=True
+        failure['sequential']=False
+        failure['cascading']=False
+    elif failure_type == 'sequential':
+        failure['single']=False
+        failure['sequential']=True
+        failure['cascading']=False
+    elif failure_type == 'cascading':
+        failure['single']=False
+        failure['sequential']=False
+        failure['cascading']=True
+    else:
+        print 'Could not assign the failure_type %s to one of the available methods.' %failure_type
+    if selection_type == 'random':
+        failure['random']=True
+        failure['degree']=False
+        failure['betweenness']=False
+        failure['from_list']=False
+    elif selection_type == 'degree':
+        failure['random']=False
+        failure['degree']=True
+        failure['betweenness']=False
+        failure['from_list']=False
+    elif selection_type == 'betweenness':
+        failure['random']=False
+        failure['degree']=False
+        failure['betweenness']=True
+        failure['from_list']=False
+    else:
+        print 'Could not assign the selection_type %s to one of the available methods.' %selection_type
+    return failure        
+        
+def default_handling_variables():
+    
+    handling_variables = {'remove_subgraphs':True,'remove_isolates':False,'no_isolates':False}  
+
+    return handling_variables
+        
