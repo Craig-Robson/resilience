@@ -291,7 +291,7 @@ def set_failure_dict(analysis_type,failure_type,selection_type):
         failure['dependency']=False
         failure['interdependency']=True
     else:
-        print 'Could not assign the analysis_type %s to one of the available methods.' %analysis_type
+         raise error_classes.GeneralError('Error. Could not assign the analysis_type %s to one of the available methods.' %analysis_type)
     if failure_type == 'single':
         failure['single']=True
         failure['sequential']=False
@@ -305,24 +305,40 @@ def set_failure_dict(analysis_type,failure_type,selection_type):
         failure['sequential']=False
         failure['cascading']=True
     else:
-        print 'Could not assign the failure_type %s to one of the available methods.' %failure_type
+        raise error_classes.GeneralError('Error. Could not assign the failure_type %s to one of the available methods.' %failure_type)
     if selection_type == 'random':
         failure['random']=True
         failure['degree']=False
         failure['betweenness']=False
         failure['from_list']=False
+        failure['flow']=False
     elif selection_type == 'degree':
         failure['random']=False
         failure['degree']=True
         failure['betweenness']=False
         failure['from_list']=False
+        failure['flow']=False
     elif selection_type == 'betweenness':
         failure['random']=False
         failure['degree']=False
         failure['betweenness']=True
         failure['from_list']=False
+        failure['flow']=False
+    elif selection_type == 'from_list':
+        failure['random']=False
+        failure['degree']=False
+        failure['betweenness']=False
+        failure['from_list']=True
+        failure['flow']=False
+    elif selection_type == 'flow':
+        failure['random']=False
+        failure['degree']=False
+        failure['betweenness']=False
+        failure['from_list']=False
+        failure['flow']=True
     else:
-        print 'Could not assign the selection_type %s to one of the available methods.' %selection_type
+        raise error_classes.GeneralError('Error. Could not assign the selection_type %s to one of the available methods.' %selection_type)
+    
     return failure        
         
 def default_handling_variables():
@@ -330,4 +346,38 @@ def default_handling_variables():
     handling_variables = {'remove_subgraphs':True,'remove_isolates':False,'no_isolates':False}  
 
     return handling_variables
+    
+def check_inputs(failure):
+    
+    count = 0
+    selection_types = ['flow','random','degree','betweenness','from_list']
+    for key in failure.keys():
+        for option in selection_types:
+            if option == key and failure[key]==True: count +=1
+    if count == 0:
+        raise error_classes.InputError('Error. None of the selection types were set as True. At least one should be.')
+    elif count > 1:
+        raise error_classes.InputError('Error. Only one of the selection types should be True.')      
+    
+    count = 0
+    failure_types = ['single','sequential','cascading']
+    for key in failure.keys():
+        for option in failure_types:
+            if option == key and failure[key] == True: count +=1
+    if count == 0:
+        raise error_classes.InputError('Error. None of the failure types were set as True. At least one should be.')
+    elif count > 1:
+        raise error_classes.InputError('Error. Only one of the failure types should be True.')
+    
+    count = 0
+    analysis_types = ['stand_alone','dependency','interdependency']
+    for key in failure.keys():
+        for option in analysis_types:
+            if option == key and failure[key] == True: count +=1
+    if count == 0:
+        raise error_classes.InputError('Error. None of the analysis types were set as True. At least one should be.')
+    elif count > 1:
+        raise error_classes.InputError('Error. Only one of the analysis types should be True.')
+    
+    
         

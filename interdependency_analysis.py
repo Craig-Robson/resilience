@@ -69,6 +69,10 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     basicA,basicB,optionA,optionB,interdependency_metrics,cascading_metrics = metrics
     parameters=failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
+    
+    
+    #------run some tests to check inputs are correct--------------------------
+    tools.check_inputs(failure)    
     i = 0;iterate = True  
     print 'i is:', i
     #--------------------node and edge attributes------------------------------
@@ -153,6 +157,9 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         elif failure['random']:
             #randomly select the next node and remove it
             GtempA,node = failure_methods.sequential_random(GtempA, handling_variables['no_isolates'],failure['interdependency'])
+        elif failure['flow']:
+            #select the node with the greatest flow - uses field named 'flow'
+            GtempA,node = failure_methods.sequential_flow(GtempA, handling_variables['no_isolates'],failure['interdependency'])
         #update the counter
         #basicA['no_of_nodes_removed'].append(len(basicA['no_of_nodes_removed']))
         basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'][len(basicA['no_of_nodes_removed'])-1]+1)
@@ -185,6 +192,8 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 ma, dead = tools.max_val_random(nx.betweenness_centrality(GtempA))
             elif failure['random']==True and failure['degree']==False and failure['betweeness']==False:
                 dead = dead
+            elif failure['flow']==True:
+                ma, dead = tools.maximum_flow(GtempA)
             #update the network and find the next set of nodes to remove
             GtempA,dlist,removed_nodes,deadlist = failure_methods.cascading_failure(GtempA,dlist,dead,i,basicA['subnodes'], basicA['isolated_nodes'],basicA['nodes_removed'],failure['interdependency'])
             node = deadlist
@@ -374,16 +383,17 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         subgraphs (goes throught the handling avraibles, then calculates metrics 
         required.)
         '''
+        
         #------------unpack the holding variables------------------------------
         failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
         basic_metrics['no_of_isolated_nodes'].append(len(nx.isolates(Gtemp)))
 
-        #------------check for isoalted nodes---------------------------------
+        #------------check for isoalted nodes----------------------------------      
         
         if handling_variables['remove_isolates']==True:
             if Gtemp.number_of_edges() <> 0:
                 Gtemp,node_list,basic_metrics,option_metrics,isolated_nodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(Gtemp,node_list,option_metrics,basic_metrics,to_b_nodes,from_a_nodes,a_to_b_edges,net)
-                #not too sure why I need separate things for net a and b??S
+                #not too sure why I need separate things for net a and b??
                 if net == 'B':         
                     if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
                     if option_metrics['no_of_isolated_nodes_removed']<>False:option_metrics['no_of_isolated_nodes_removed'].append(len(isolated_nodes))

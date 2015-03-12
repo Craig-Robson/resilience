@@ -20,6 +20,13 @@ class GraphError(Exception):
     def __str__(self):
 		return repr(self.value)
 
+class InputError(Exception):
+    '''Error in input data.'''
+    def __init__(self, value):
+		self.value = value
+    def __str__(self):
+		return repr(self.value)
+
 class OutputError(Exception):
     ''''''
     def __init__(self, value):

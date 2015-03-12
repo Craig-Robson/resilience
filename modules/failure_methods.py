@@ -70,6 +70,28 @@ def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
     G.remove_node(node)
     #return the network and the node which was removed
     return G,node
+
+def sequential_flow(G, NO_ISOLATES, INTERDEPENDENCY):
+    '''Sequential anlysis method where the node to be removed is selcted 
+    via having the highest flow value.
+    Input: a network, NO_ISOLATES varaible, INTERDEPENDENCY variable
+    Return: a network, the node removed'''
+    
+    flow_dict = {}
+    for nd in G.nodes():
+        flow_dict[nd]=G.node[nd]['flow']
+        
+    value, node = tools.max_val_random(flow_dict)  
+    
+    #if the node has the value of an error
+    if node == -99999:
+        raise error_classes.GeneralError('Error. An error occured when calcualting the node to remove.')
+    else:
+        #remove all edges which feature the node and then the node
+        G.remove_node(node) 
+    #return the eddited network and the node removed
+
+    return G, node
     
 def sequential_from_list(G,INTERDEPENDENCY,fail_list,i):
     '''
@@ -151,7 +173,9 @@ def single_random(G,node_list, INTERDEPENDENCY):
     
 '''Failure via shapefile'''
 def geo_failure(G,shp_file):
-    '''Given a shapefile, identifies those nodes within the failure zone.'''    
+    '''Given a shapefile, identifies those nodes within the failure zone.'''
+    
+    print 'THIS NEEDS UPDATING'
     import shapefile
     coords = []
     sf = shapefile.Reader(shp_file)
