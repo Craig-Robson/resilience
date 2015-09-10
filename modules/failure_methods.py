@@ -203,6 +203,53 @@ def cascading_failure(G, dlist, dead,k,subnodes_A, isolated_nodes_A, removed_nod
     var = G,dlist,removed_nodes,node
     return var
 
+'''flow cascading failure'''
+def flow_cascading_failure(G,NO_ISOLATES, INTERDEPENDENCY,flow_key,cap_key):
+    '''
+    Removes any nodes where the flow value exceeds the capacity value.
+    Inputs:
+    Returns:
+    '''
+    removed_edges = []
+    removed_nodes = []
+    
+    #check for keys in networks
+    for edge in G.edges(data=True):
+        try:
+            edge[2][flow_key]
+        except:
+            print 'Could not find %s attribute in an edge.' %flow_key
+            raise
+        try:
+            edge[2][cap_key]
+        except:
+            print 'Could not find %s attribute in an edge.' %cap_key
+            raise
+    
+    for node in G.nodes(data=True):
+        try:
+            node[1][flow_key]
+        except:
+            print 'Could not find %s attribute in a node.' %flow_key
+            raise
+        try:
+            node[1][cap_key]
+        except:
+            print 'Could not find %s attribute in a node.' %cap_key
+            raise
+    
+    #remove any edge where flow is greater than capacity        
+    for edge in G.edges(data=True):
+        if edge[2][flow_key] > edge[2][cap_key]:
+            removed_edges.append(edge)
+    #remove any node where flow is greater then capacity
+    for node in G.nodes(data=True):
+        if node[1][flow_key] > node[1][cap_key]:
+            removed_nodes.append(node)
+    
+    return G,removed_nodes,removed_edges
+
+
 '''single isolaterd failures'''    
 def single_random(G,node_list, INTERDEPENDENCY):
     '''Analysis by removeing only one node for each iteration, where the nodes 
