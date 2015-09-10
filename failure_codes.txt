@@ -1,0 +1,248 @@
+Failure codes
+'Function by function breakdown of all failure codes.'
+
+Module:
+interdependency_analysis	1.../2...
+failure_methods				3...	
+network_handling			4...
+outputs						5...
+tools						6...
+
+
+---------------------------------------------------------------------
+interdependency_analysis module
+import_modules:
+None
+
+main:
+code	error
+1100	Failed when running the step function. Error wasn't handled otherwise.	
+1101	Failed as no analysis method set as True at end of function.
+1102	Could not import the required modules using the import_modules function.
+
+
+step:
+code	error
+1001	No component selection method set as True in failure dictionary.
+1002	Failure selecting component to be removed.
+1003	No failure method (e.g. sequential) set as True for the analysis.
+1005	An unknown failure has occurred when running the analysis in analysis_B function.
+1010	Failure running flow checks, i.e. to make sure source node still in network for stand alone network analysis.
+
+analysis_B:
+code	error
+2001	Failed to calculate the average path length of the network/of components.
+2002	Failed to retrieve the average path length of the giant component.
+2003	Failed to calculate the average path length of the giant component.
+2004	Failed while calculating the average geographic path length of the network.	
+2005	Failed to calculate the average geographic path length of the giant component.
+2006 	Failed when calculating the betweenness centrality.
+2007	Failed when calculating the clustering coefficient.
+2008 	Failed to calculate the transitivity.
+2009	Failed to calculate the square clustering coefficient.
+2010	Failed calculating the average degree connectivity.
+2011	Failed to calculate the closeness centrality.
+2012	Failed to calculate the average neighbor degree.
+2013	Failed calculating the density of the network.
+2014	Failed to calculate the assortativity coefficient.
+2015 	Failed to calculate the degree centrality.
+
+
+metrics_initial:
+
+default_parameters:
+
+outputresults:
+These error codes are from the outputs module and the sub-functions within.
+-outputresults
+code	error
+5001	Failed to open output file. Check file path.
+
+-txtout
+code	error
+5010	Error writing the failure analysis parameters to results file.
+5011	Error writing the dependency and interdependency specific metrics to the results file.
+
+-write_text_file
+code	error
+5031	Failed when writing the basic set of metric results out to the text file.
+5032	Failed writing metric specific to the first network to results file (nodes selected to fail).
+5033	Failed when writing the optional set of metric results to the output text file.
+
+- write_to_db
+code	error
+5201	Failed to import the nx_pgnet module which is required for the writing of networks to the databsae.
+5202	Could not connect to the database. Please check the connection parameters.
+5205	Failure when trying to write a spatial network (a) to the database through nx_pgnet.
+5206	Failure when trying to write a spatial network (b) to the database through nx_pgnet.
+5207	Failure when trying to write an a-spatial network (a) to the database.
+5208	Failure when trying to write an a-spatial network (b) to the database.
+5210	Failed to write dependency edges table and its contents.
+5211	Failed to run re name table function.
+
+- write_results_table
+code	error
+5251 	Could not open connection to database. Check connect parameters.
+5255	Failed when writing the values for the basic metrics (for network a) to the results table in the database.
+5256	Failed when writing the option metric values (for network a) to the results table in the database.
+5257	Failed when writing the basic metric values (for network b) to the results table in the database.
+5258	Failed when writing the option metric values (for network b) to the results table in the database.
+5259	Failed when writing the dependency metrics to the results database table.
+
+- create_db_res_table
+code	error
+5241	Failed creating results table for network in database (network a).
+5242	Failed adding columns in results table for metrics computed for network (network a).
+5243	Failed adding columns for dependency metrics in results table for network (network a).
+5244	Failed creating results table for network in database (network b).
+5245	Failed adding columns in results table for metrics computed for network (network b).
+5246	Failed adding columns for dependency metrics in results table for network (network b).
+
+---------------------------------------------------------------------
+network_handling module
+check_node_removed:
+code	error
+4001	Error in attempting to identify if a node has been removed from the network.
+
+remove_isolates:
+code	error
+4010	Error running networkx function isolates.
+4012	Error removing identified isolated nodes from the list of nodes.
+4013	Error when updating lists due to isolated nodes which have been removed.
+
+handle_sub_graphs:
+code	error
+4020	Failed running the networkx function connected_component_subgraphs.
+
+check_dependency_edges:
+code	error
+4030	Error removing node from network/node lists.
+
+clean_node_lists:
+code	error
+4040	Error removing node from node list. Node likely not in list.
+4041	Error removing node from dependency edge lists.
+4042	Error looping through list of subnodes for node lists.
+4043	Error looping through list of subnodes for dependency edge lists.
+
+check_connected_to_source_nodes:
+code	error
+4050	Error when checking for path between to source nodes using nx.has_path function.
+4051	Error when attempting to remove node from network.
+
+whole_graph_av_path_length:
+code	error
+4060 	Error calculating the average path length of a subgraph in the network.
+4061	Error in finding the subgraphs and calculating the average path length.
+
+---------------------------------------------------------------------
+tools module
+replace_all:
+code	error
+
+write_to_log_file:
+code	error
+
+failure_type:
+code	error
+6030	No failure method set as True (e.g. Sequential).
+6031	No node selection method set as True (e.g. Random).
+
+max_val_random:
+code	error
+6040	No node returned a value above the default -9999. 
+6041	No node returned a value above the default -9999. Error when using node degree.
+6042	No node returned a value above the default -9999. Error when using node betweenness.
+
+get_node_edges_csv:
+code	error
+6050	Could not open csv file containing the network.
+
+add_node_field:
+code	error
+6060	Failed when trying to added the 'id_' field to a node in the network.
+
+add_edge_field:
+code	error
+6070	Failed when adding a field to the edge of a network.
+
+analyse_existing_networks:
+code	error
+
+set_basic_parameters:
+code	error
+
+set_failure_dict:
+code	error
+6100	Failed to create failure dictionary as the analysis type was not specified.
+6101	Failed to create failure dictionary as the failure type was not specified.
+6103	Failed to create failure dictionary as the selection type was not specified.
+
+default_handling_variables:
+code	error
+
+check_inputs:
+code	error
+6120	None of the selection types were set as True.
+6121	More than one of the selection types were set as True.
+6122	None of the failure types were set as True.
+6123	More than one of the failure types were set as True.
+6124	None of the analysis types were set as True.
+6125	More than one of the analysis types were set as True.
+
+---------------------------------------------------------------------
+failure_methods module
+sequential_degree:
+code	error
+3000	Failed due to error in the finding the node with the maximum degree.
+3001	Failed to identify a node with a degree despite there being edges in the network.
+3002	Failed due to no edges being left in the network.
+3003	Failed to remove identified node with maximum degree from the network.
+
+sequential_betweenness:
+code	error
+3010	An error occurred when identifying the node with the maximum betweenness.
+3011	No node was returned to be removed from the network. 
+3012	Failed removing selected node from the network.
+
+sequential_random:
+code	error
+3020	Failed removing the selected node from the network.
+
+sequential_flow:
+code	error
+3030	Failed identifying the node with the maximum flow.
+3031	No node was selected to be removed.
+3032	Failed trying to remove selected node from the network.
+
+sequential_from_list:
+code	error
+3040	Could not select node to remove from network as the list is not long enough.
+3041	Failed trying to remove selected node from the network.
+
+cascading_failure:
+code	error
+3050
+3051	Failed when trying to identify the neighbors of the node using the networkx function.
+3052	Failed for an unknown reason when removing nodes.
+3053	Failed to remove the selected node from the network.
+
+single_random:
+code	error
+3060	Could not remove a node as node nodes left in the network.
+3061	Failed to remove selected node from the network.
+
+geo_failure:
+code	error
+3070	Could not open shapefile.
+3071	Failed trying to run remove_edges function for edges which fall within the polygon.
+3072	Failed trying to remove a node which falls within the polygon from the network.
+
+point_in_poly:
+code	error
+3080	Failed running the point_in_poly function.
+
+---------------------------------------------------------------------
+Notes:
+
+

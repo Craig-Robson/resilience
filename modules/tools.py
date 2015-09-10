@@ -9,7 +9,11 @@ import random
 import datetime
 
 #specific modules
-import error_classes
+try:
+    import error_classes
+except:
+    print 'Could import error_classes module'
+    exit()
 
 def replace_all(text, dic):
     ''''''
@@ -33,8 +37,9 @@ def write_to_log_file(logfilepath,text):
             logfile.write(str(datetime.time) + ',\t' + str(text))
             logfile.close()
         except:
-            #if the logfile could not be opened
-            raise error_classes.WriteError('Write Error. Could not write to log file.')
+            #if the logfile could not be opened or written to
+            print 'Failed to write to log file'
+            #raise error_classes.WriteError('Write Error. Could not write to log file.')
 
 def failure_type(failure_dict):
     '''Generates a string describing the analysis being run.
@@ -43,10 +48,13 @@ def failure_type(failure_dict):
     if failure_dict['single'] == True: failure = 'Single'
     elif failure_dict['sequential'] == True: failure = 'Sequential'
     elif failure_dict['cascading'] == True: failure = 'Cascading' 
+    else: return 6030
     
     if failure_dict['random'] == True: typ = 'Random'
     elif failure_dict['degree'] == True: typ = 'Degree'
     elif failure_dict['betweenness'] == True: typ = 'Betweenness'
+    else: return 6031
+
     #add togetehr to create a single string
     failuretype = '%s_%s' % (failure, typ)
     return failuretype
@@ -67,32 +75,34 @@ def max_val_random(value_list):
 
     #loop through the whole list
     while node_iterator < len(value_list):
-            try:
-                if value_list[list_iterator] > ma:
-                    #if the value is higher than the max value already
-                    #reset the tie list
-                    tie_list = []
-                    #add the value to the tie_list in case another one with the same value is found
-                    tie_list.append(list_iterator)
-                    ma = value_list[list_iterator]
-                    node = list_iterator
-                elif value_list[list_iterator] == ma:
-                    #if the value is the same as the current max value, add to the tie list
-                    tie_list.append(list_iterator)
-                else:
-                    pass
-                node_iterator += 1
-            except:
-                #pass as no node with this value
+        try:
+            if value_list[list_iterator] > ma:
+                #if the value is higher than the max value already
+                #reset the tie list
+                tie_list = []
+                #add the value to the tie_list in case another one with the same value is found
+                tie_list.append(list_iterator)
+                ma = value_list[list_iterator]
+                node = list_iterator
+            elif value_list[list_iterator] == ma:
+                #if the value is the same as the current max value, add to the tie list
+                tie_list.append(list_iterator)
+            else:
                 pass
-            list_iterator += 1
+            node_iterator += 1
+        except:
+            #pass as no node with this value
+            pass
+        list_iterator += 1
             
     #if there is more than one node in the tie list, pick one at random            
     if len(tie_list) > 0:
         node = random.choice(tie_list)
-        return ma, node
+        var = ma, node
+        return var
     else:
         raise error_classes.GeneralError('Error. No node was found with a value greater than -99999.')
+        return 6040
 
 def get_nodes_edges_csv(location):
     '''This allows a network to be loaded from a csv file. 
@@ -101,7 +111,11 @@ def get_nodes_edges_csv(location):
             netwrokx graph class.'''
             
     #open the specified text file
-    text = open(location).read()
+    try:
+        text = open(location).read()
+    except:
+        return 6050
+        
     #split the text in the file on the new line
     text1, text2 = text.split('\n')
     node_list = []
@@ -133,14 +147,20 @@ def get_nodes_edges_csv(location):
                     each = int(each)
                     templist.append(each)
             edge_list.append(templist) 
-
-    return node_list, edge_list
+    var = node_list, edge_list
+    return var
 
 def add_node_field(G,field_name,data=None):
+    '''
+    Adds an id field to all nodes. Needed when writing an a-spatial network to the database.
+    '''
     if field_name == 'id_':
         index=0
         for node in G.nodes():
-            G.node[node][field_name]=index
+            try:
+                G.node[node][field_name]=index
+            except:
+                return 6060
             index+=1
     else:
         for key in data:
@@ -148,13 +168,20 @@ def add_node_field(G,field_name,data=None):
     return G
 
 def add_edge_field(G,field_name,data=None):
+    '''
+    Adds a field to all edges in a network.
+    '''
     if data <> None:
         for key in data:
-            G.edge[key[0]][key[1]][field_name]=data[key]
+            try:
+                G.edge[key[0]][key[1]][field_name]=data[key]
+            except:
+                return 6070
     return G
 
 def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_location):
-    ''''''
+    '''
+    '''
     import ogr, sys, tools
     sys.path.append()
     import nx_pgnet
@@ -162,7 +189,10 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
     import interdependency_analysis as ia
     #unpack varaibles
     metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
-    failuretype = failure_type(failure)
+    var = failure_type(failure)
+    if type(var) == int:
+        return var
+    else: failuretype = var
     #if performing analysis on one network only    
     if failure['stand_alone'] == True:
         count = 0
@@ -184,7 +214,10 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
                     #get the text file
                     # maybe replace file_path with fileName1
                     filepath = str(fileName)+'%s/%s.txt' %(db, nets)
-                    nodelist, edgelist = tools.get_nodes_edges_csv(filepath)
+                    var = tools.get_nodes_edges_csv(filepath)
+                    if type(var) == int:
+                        return var
+                    else: nodelist, edgelist = var
                     #build the network from the lists returned from the function
                     G = nx.Graph()
                     G.add_nodes_from(nodelist)
@@ -208,12 +241,18 @@ def analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db,
         elif use_db == False:
             #get both networks from csv
             filepath = str(fileName)+'%s/%s.txt' %(db, NETWORK_NAME[0])
-            nodelist, edgelist = tools.get_nodes_edges_csv(filepath)
+            var = tools.get_nodes_edges_csv(filepath)
+            if type(var) == int:
+                return var
+            else: nodelist, edgelist = var
             G1 = nx.Graph()
             G1.add_nodes_from(nodelist)
             G1.add_edges_from(edgelist)
             filepath = str(fileName)+'%s/%s.txt' %(db, NETWORK_NAME[1])
-            nodelist, edgelist = tools.get_nodes_edges_csv(filepath)
+            var = tools.get_nodes_edges_csv(filepath)
+            if type(var) == int:
+                return var
+            else: nodelist, edgelist = var
             G2 = nx.Graph()
             G2.add_nodes_from(nodelist)
             G2.add_edges_from(edgelist)
@@ -291,7 +330,10 @@ def set_failure_dict(analysis_type,failure_type,selection_type):
         failure['dependency']=False
         failure['interdependency']=True
     else:
-         raise error_classes.GeneralError('Error. Could not assign the analysis_type %s to one of the available methods.' %analysis_type)
+         raise error_classes.GeneralError('Error. Could not assign the analysis_type %s to one of the
+ available methods.' %analysis_type)
+         return 6100
+         
     if failure_type == 'single':
         failure['single']=True
         failure['sequential']=False
@@ -306,6 +348,8 @@ def set_failure_dict(analysis_type,failure_type,selection_type):
         failure['cascading']=True
     else:
         raise error_classes.GeneralError('Error. Could not assign the failure_type %s to one of the available methods.' %failure_type)
+        return 6101
+        
     if selection_type == 'random':
         failure['random']=True
         failure['degree']=False
@@ -338,6 +382,7 @@ def set_failure_dict(analysis_type,failure_type,selection_type):
         failure['flow']=True
     else:
         raise error_classes.GeneralError('Error. Could not assign the selection_type %s to one of the available methods.' %selection_type)
+        return 6103
     
     return failure        
         
@@ -348,17 +393,21 @@ def default_handling_variables():
     return handling_variables
     
 def check_inputs(failure):
-    
+    '''
+    Checks the required inputs have been provided for some analysis to be performed.
+    '''
     count = 0
     selection_types = ['flow','random','degree','betweenness','from_list']
     for key in failure.keys():
         for option in selection_types:
             if option == key and failure[key]==True: count +=1
     if count == 0:
-        raise error_classes.InputError('Error. None of the selection types were set as True. At least one should be.')
+        raise error_classes.InputError('Error. None of the selection types were set as True. At leastone should be.')
+        return 6120
     elif count > 1:
         raise error_classes.InputError('Error. Only one of the selection types should be True.')      
-    
+        return 6121
+        
     count = 0
     failure_types = ['single','sequential','cascading']
     for key in failure.keys():
@@ -366,9 +415,11 @@ def check_inputs(failure):
             if option == key and failure[key] == True: count +=1
     if count == 0:
         raise error_classes.InputError('Error. None of the failure types were set as True. At least one should be.')
+        return 6122
     elif count > 1:
         raise error_classes.InputError('Error. Only one of the failure types should be True.')
-    
+        return 6123
+        
     count = 0
     analysis_types = ['stand_alone','dependency','interdependency']
     for key in failure.keys():
@@ -376,8 +427,10 @@ def check_inputs(failure):
             if option == key and failure[key] == True: count +=1
     if count == 0:
         raise error_classes.InputError('Error. None of the analysis types were set as True. At least one should be.')
+        return 6124
     elif count > 1:
         raise error_classes.InputError('Error. Only one of the analysis types should be True.')
-    
-    
+        return 6125
+
+    return True    
         

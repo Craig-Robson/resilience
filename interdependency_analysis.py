@@ -36,8 +36,9 @@ __version__ = "5.3.2"
 
 #standard modules
 
-import sys, random
+import os, sys, random
 import networkx as nx
+
 '''
 #custom modules
 sys.path.append("C:/a8243587_DATA/GitRepo/resilience/modules")
@@ -45,12 +46,10 @@ sys.path.append("C:/Users/Craig/GitRepo/resilience/modules")
 import tools,error_classes,failure_methods,network_handling,outputs
 '''
 
-
 def import_modules(resil_mod_loc):
     sys.path.append(resil_mod_loc)
     global tools, error_classes, failure_methods, network_handling, outputs
     import tools,error_classes,failure_methods,network_handling,outputs
-
 
 def main(GA, GB, parameters, logfilepath, viewfailure=False):
     '''
@@ -60,21 +59,34 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
     Input: up to two networks, parameters and a logfile path.
     Returns: a boolean varalible stating if the analysis has been completed.
     '''
-    import_modules("C:/a8243587_DATA/GitRepo/resilience/modules")
+    try:
+        import_modules(os.path.dirname(__file__)+"\modules")
+    except:
+        return 1102
         
-    metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B=parameters
+    metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B = parameters
     
     #------set up the metrics for the analysis being asked for-----------------
-    networks,metrics,graphparameters = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges,source_nodes_A,source_nodes_B)
+    var = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges,source_nodes_A,source_nodes_B)
+    if type(var) == int:
+        tools.write_to_log_file(logfilepath, 'Error code %s returned. Failure in metrics_initial function.')
+        return var
+    else:
+        networks,metrics,graphparameters = var
+        
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     basicA,basicB,optionA,optionB,interdependency_metrics,cascading_metrics = metrics
     parameters=failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
     
     
     #------run some tests to check inputs are correct--------------------------
-    tools.check_inputs(failure)    
+    var = tools.check_inputs(failure)    
+    if type(var) == int:
+        tools.write_to_log_file(logfilepath, 'Error code %s returned. Incorrect input parameters were specified.')
+        return var
+        
     i = 0;iterate = True  
-    print 'i is:', i
+
     #--------------------node and edge attributes------------------------------
     if store_n_e_atts:
         '''
@@ -85,31 +97,61 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
         pass
     #-----------------write networks to database t = 0-------------------------
     #GA,GB,GA,GB=networks
-    if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
+    if write_step_to_db:
+        var = outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
+        if type(var) == int:
+            tools.write_to_log_file(logfilepath, 'Error code %s returned. Could not write network to database.' %(var))
+            return var
+            
     #-----------------write metrics to database table t = 0--------------------  
-    if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k=0)
+    if write_results_table:
+        var = outputs.write_results_table(metrics,i,failure,db_parameters,k=0)
+        if type(var) == int:
+            tools.write_to_log_file(logfilepath, 'Error code %s returned. Could not write results to table in database.' %(var))
+            return var
+            
     i +=1
     
     graphparameters=networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B
     #run the analysis if seuquential or cascading == true
     if failure['sequential']==True or failure['cascading']==True or failure['stand_alone']==True:
-        #while iterate is still true- network still has edges eleft
+        #while iterate is still true- network still has edges left
         while iterate == True:
             print '----------------------------------------------'
             print 'i is:', i
             #-------------update log file (if file path set)-------------------
             tools.write_to_log_file(logfilepath,'initiating step')
             #-------------run the step-----------------------------------------
-            graphparameters,parameters,metrics,iterate = step(graphparameters,parameters,metrics,iterate,logfilepath)
+            try:
+                var = step(graphparameters,parameters,metrics,iterate,logfilepath)
+                if type(var) == int:
+                    tools.write_to_log_file(logfilepath,'Error code %s returned. Error running step %s.' %(var,i))
+                    return var
+                else:
+                    gaphparameters,parameters,metrics,iterate = var
+            except:
+                tools.write_to_log_file(logfilepath,'Error running step %s. Failed.' %(i))
+                return 1100
+                
             #-------------unpack variables-------------------------------------
             basicA,basicB,optionA,optionB,interdependency,cascading = metrics
             networks,k,node_list,to_b_nodes,from_a_nodes,source_nodes_A, source_nodes_B = graphparameters
             #-------------write networks to database---------------------------
-            if write_step_to_db:outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)    
+            if write_step_to_db:
+                var = outputs.write_to_db(networks,a_to_b_edges,failure,db_parameters,i)
+                if type(var) == int:
+                    tools.write_to_log_file(logfilepath, 'Error code %s returned. Error when writing network for step %s to database.' %(var, i))
+                    return var
+                    
             #-------------write metrics to database table----------------------  
-            if write_results_table:outputs.write_results_table(metrics,i,failure,db_parameters,k)
+            if write_results_table:
+                var = outputs.write_results_table(metrics,i,failure,db_parameters,k)
+                if type(var) == int:
+                    tools.write_to_log_file(logfilepath, 'Error code %s returned. Errors when writing metric values to databse for step %s.' %(var, i))
+                    return var
+                    
             #-------------update log file (if file path set)-------------------
-            tools.write_to_log_file(logfilepath,'step completed')
+            tools.write_to_log_file(logfilepath,'Step %s completed.' %(i))
             #-------------stop if stand alone and all nodes have been removed--
             if failure['stand_alone']==True:
                 if i == networks[2].number_of_nodes(): iterate = False
@@ -117,15 +159,21 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False):
             i+=1
         if iterate == False:
             #no edges left so output results
-            outputs.outputresults(graphparameters,parameters,metrics,logfilepath=None)
+            var = outputs.outputresults(graphparameters,parameters,metrics,logfilepath=None)
+            if type(var) == int:
+                tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed when trying to write the final set of results out at end of analysis.' %(var))
+                return var
+                
     elif failure['stand_alone']==True:
         pass
     else:
         print "No analysis method selected"
+        return 1101
+        
     complete = True
     print "Completed simulation"
     #update log file - only works if file path is set
-    tools.write_to_log_file(logfilepath,'completed analysis')
+    tools.write_to_log_file(logfilepath,'Completed analysis!')
     return complete
 
 def step(graphparameters, parameters, metrics, iterate, logfilepath):
@@ -144,22 +192,49 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
     #----------------for sequential analysis only------------------------------
     #look at adding ability to remove nodes from both A and B
     if failure['sequential'] and failure['single']==False and failure['cascading']==False:
-        if failure['degree']:
-            #find node based on highest degree and remove it
-            GtempA,node = failure_methods.sequential_degree(GtempA,failure['interdependency'])
-        elif failure['betweenness']:
-            #find node with highest betweenness value and remove it           
-            GtempA,node = failure_methods.sequential_betweenness(GtempA,failure['interdependency'])
-        elif failure['from_list']<>False:
-            print 'THIS METHOD HAS NOT BEEN FINISHED OR TESTED'
-            fail_list = []
-            GtempA,node = failure_methods.sequential_from_list(GtempA,failure['interdependency'],fail_list,i)
-        elif failure['random']:
-            #randomly select the next node and remove it
-            GtempA,node = failure_methods.sequential_random(GtempA, handling_variables['no_isolates'],failure['interdependency'])
-        elif failure['flow']:
-            #select the node with the greatest flow - uses field named 'flow'
-            GtempA,node = failure_methods.sequential_flow(GtempA, handling_variables['no_isolates'],failure['interdependency'])
+        try:
+            if failure['degree']:
+                #find node based on highest degree and remove it
+                var = failure_methods.sequential_degree(GtempA,failure['interdependency'])
+                if type(var) == int:
+                    pass
+                else: GtempA,node = var
+                
+            elif failure['betweenness']:
+                #find node with highest betweenness value and remove it           
+                var = failure_methods.sequential_betweenness(GtempA,failure['interdependency'])
+                if type(var) == int:
+                    pass
+                else: GtempA,node = var
+                
+            elif failure['from_list']<>False:
+                print 'THIS METHOD HAS NOT BEEN FINISHED OR TESTED'
+                fail_list = []
+                var = failure_methods.sequential_from_list(GtempA,failure['interdependency'],fail_list,i)
+                if type(var) == int:
+                    pass
+                else: GtempA,node = var
+                
+            elif failure['random']:
+                #randomly select the next node and remove it
+                var = failure_methods.sequential_random(GtempA, handling_variables['no_isolates'],failure['interdependency'])
+                if type(var) == int:
+                    pass
+                else: GtempA,node = var
+                
+            elif failure['flow']:
+                #select the node with the greatest flow - uses field named 'flow'
+                var = failure_methods.sequential_flow(GtempA, handling_variables['no_isolates'],failure['interdependency'])
+                if type(var) == int:
+                    pass
+                else: GtempA,node = var
+                
+            else:
+                tools.write_to_log_file(logfilepath, 'Error in failure dictionary - no component selection method chosen (set as True). Sequential process chosen.')
+                return 1001
+        except:
+            tools.write_to_log_file(logfilepath, 'Error in finding the next node to remove given selection method. Sequential process chosen.')
+            return 1002
         #update the counter
         #basicA['no_of_nodes_removed'].append(len(basicA['no_of_nodes_removed']))
         basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'][len(basicA['no_of_nodes_removed'])-1]+1)
@@ -187,15 +262,25 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         #need to initaite the failure through remoiving a node to begin with
         if i == 1:
             if failure['degree'] and failure['betweenness']==False and failure['random']==False:
-                ma, dead = tools.max_val_random(nx.degree(GtempA))
+                var = tools.max_val_random(nx.degree(GtempA))
+                if type(var) == int:
+                    return var+1
+                else: ma, dead = var
             elif failure['betweenness']==True and failure['random']==False and failure['degree']==False:
-                ma, dead = tools.max_val_random(nx.betweenness_centrality(GtempA))
+                var = tools.max_val_random(nx.betweenness_centrality(GtempA))
+                if type(var) == int:
+                    return var+2
+                else: ma, dead = var
             elif failure['random']==True and failure['degree']==False and failure['betweeness']==False:
                 dead = dead
             elif failure['flow']==True:
                 ma, dead = tools.maximum_flow(GtempA)
             #update the network and find the next set of nodes to remove
-            GtempA,dlist,removed_nodes,deadlist = failure_methods.cascading_failure(GtempA,dlist,dead,i,basicA['subnodes'], basicA['isolated_nodes'],basicA['nodes_removed'],failure['interdependency'])
+            var = failure_methods.cascading_failure(GtempA,dlist,dead,i,basicA['subnodes'], basicA['isolated_nodes'],basicA['nodes_removed'],failure['interdependency'])
+            if type(var) == int:
+                return var
+            else: GtempA,dlist,removed_nodes,deadlist = var
+                
             node = deadlist
             
             #------------on all but first time step----------------------------
@@ -206,7 +291,6 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         
         #update metric
         basicA['no_of_nodes_removed'].append(basicA['no_of_nodes_removed'][len(basicA['no_of_nodes_removed'])-1]+len(deadlist))
-
 
         #-----removes source node from list if it is the selected node
         if source_nodes_A != None:
@@ -224,7 +308,11 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         #create a copy of the original network - will be complete
         GtempA = GA.copy()
         #select and remove a node from the network
-        GtempA,node = failure_methods.single_random(GtempA, node_list, failure['interdependency'])
+        var = failure_methods.single_random(GtempA, node_list, failure['interdependency'])
+        if type(var) == int:
+            return var
+        else: GtempA,node = var
+        
         #------------when node list is empty change iterate------------------
         if node_list == []:
             iterate = False
@@ -263,7 +351,11 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             x = 0
             while x < len(deadlist):
                 node = deadlist[x]
-                GtempA, GtempB, to_b_nodes, from_a_nodes, temp = network_handling.check_dependency_edges(GtempA, GtempB, node, to_b_nodes, from_a_nodes, temp)
+                var = network_handling.check_dependency_edges(GtempA, GtempB, node, to_b_nodes, from_a_nodes, temp)
+                GtempA, GtempB, to_b_nodes, from_a_nodes, temp = var
+                if type(var) == int:
+                    tools.write_to_log_file(logfilepath, 'Error code %s returned. Could not find chosen node ro remove (check_dependency_edges).' %(var))
+                    return var
                 x += 1
         #------------run for all other analysis scenarios--------------------
         else:
@@ -271,7 +363,13 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 nodes_removed=[]
                 #are we using source nodes
                 if source_nodes_A != None:
-                    GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
+                    var = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
+                    if type(var) == int:
+                        tools.write_to_log_file(logfilepath, 'Error code %s returned.' %(var))
+                        return var
+                    else:
+                        GtempA,nodes_removed = var
+                        
                     #write changes out to metrics
                     if optionA['failed_no_con_to_a_source']!=False:
                         optionA['failed_no_con_to_a_source'].append(nodes_removed)
@@ -284,11 +382,11 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
                 nodes_removed.append(node)
                                
                 #checking dependency edges
-                args = network_handling.check_dependency_edges(networks,nodes_removed,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges,temp,failure['interdependency'])
-                if args == 0001:
+                var = network_handling.check_dependency_edges(networks,nodes_removed,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges,temp,failure['interdependency'])
+                if type(var) == int:
                     raise error_classes.SearchError('Error. Could not find chosen node to remove it.')
-                    tools.write_to_log_file(logfilepath, 'ERROR %s; Could not find chosen node ro remove (check_dependency_edges).' %(args))
-                    return args
+                    tools.write_to_log_file(logfilepath, 'Error code %s returned. Could not find chosen node ro remove (check_dependency_edges).' %(var))
+                    return var
                 else:
                     #un-pack variables returned                  
                     networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges = args
@@ -312,7 +410,13 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
             if GtempB.number_of_edges() != 0:
                 if source_nodes_B != None:
                     nodes_removed=[]
-                    GtempB,nodes_removed = network_handling.check_connected_to_source_nodes(GtempB,source_nodes_B,nodes_removed)                   
+                    var = network_handling.check_connected_to_source_nodes(GtempB,source_nodes_B,nodes_removed)                   
+                    if type(var) == int:
+                        tools.write_to_log_file(logfilepath, 'Error code %s returned.' %(var))
+                        return var
+                    else:
+                        GtempB,nodes_removed = var
+                        
                     #write out to some metrics
                     if optionB['failed_no_con_to_a_source'] != False:
                         optionB['failed_no_con_to_a_source'].append(nodes_removed)
@@ -326,9 +430,25 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         
         #------------run the actual analysis---------------------------------
         #analyse network B
-        iterate,GtempB,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicB,optionB,source_nodes_B = analysis_B(parameters,iterate,GtempB,i,to_b_nodes,from_a_nodes,node_list,basicB,optionB,to_b_nodes,from_a_nodes,source_nodes_B,net='B')
+        try:
+            var = analysis_B(parameters,iterate,GtempB,i,to_b_nodes,from_a_nodes,node_list,basicB,optionB,to_b_nodes,from_a_nodes,source_nodes_B,logfilepath,net='B')
+            if type(var) == int:
+                 tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed running the post component removal analysis.')
+                 return
+            else:
+                iterate,GtempB,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicB,optionB,source_nodes_B = var
+        except:
+            tools.write_to_log_file(logfilepath, 'Failed when running analysis of network B.')
         #analyse network A
-        iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,source_nodes_A,net='A')  
+        try:
+            var = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,source_nodes_A,logfilepath,net='A')  
+            if type(var) == int:
+                tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed running the post component removal analysis.')
+                return
+            else:
+                iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = var
+        except:
+            tools.write_to_log_file(logfilepath, 'Failed when running analysis of network A.')
         
         if i <> -100: basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
         if optionA['failed_no_con_to_a_source'] != False:
@@ -340,23 +460,43 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
         i += 1   
         
     elif failure['stand_alone'] and failure['dependency']==False and failure['interdependency']==False :
-        if GtempA.number_of_edges() != 0:
-            #check all nodes still contected to a source node if set
-            if source_nodes_A != None:
-                nodes_removed=[]
-                GtempA,nodes_removed = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
-                #write out to some metrics
-                if optionA['failed_no_con_to_a_source'] != False:
-                    optionA['failed_no_con_to_a_source'].append(nodes_removed)
-                if optionA['source_nodes'] != False:
-                    temp=[]
-                    for nd in source_nodes_A: temp.append(nd)
-                    optionA['source_nodes'].append(temp)
-        else:
-            if optionA['source_nodes'] != False: optionA['source_nodes'].append([])
-            if optionA['failed_no_con_to_a_source'] != False: optionA['failed_no_con_to_a_source'].append([])
+        try:
+            if GtempA.number_of_edges() != 0:
+                #check all nodes still contected to a source node if set
+                if source_nodes_A != None:
+                    nodes_removed=[]
+                    var = network_handling.check_connected_to_source_nodes(GtempA,source_nodes_A,nodes_removed)
+                    if type(var) == int:
+                        tools.write_to_log_file(logfilepath, 'Error code %s returned.' %(var))
+                        return var
+                    else:
+                        GtempA,nodes_removed = var
+                    #write out to some metrics
+                    if optionA['failed_no_con_to_a_source'] != False:
+                        optionA['failed_no_con_to_a_source'].append(nodes_removed)
+                    if optionA['source_nodes'] != False:
+                        temp=[]
+                        for nd in source_nodes_A: temp.append(nd)
+                        optionA['source_nodes'].append(temp)
+            else:
+                if optionA['source_nodes'] != False: optionA['source_nodes'].append([])
+                if optionA['failed_no_con_to_a_source'] != False: optionA['failed_no_con_to_a_source'].append([])
+        except:
+            tools.write_to_log_file(logfilepath, 'Failed running flow checks on network.')
+            return 1010
+            
         #run the analysis
-        iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,net='A') #run the analysis
+        try:
+            var = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,logfilepath,net='A') #run the analysis
+            if type(var) == int:
+                 tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed running the post component removal analysis.')
+                 return var
+            else:
+                iterate,GtempA,i,to_a_nodes,from_b_nodes,a_to_b_edges,node_list,basicA,optionA,source_nodes_A = var
+        except:
+            tools.write_to_log_file(logfilepath, 'Failed when running analysis.')
+            return 1005
+            
         if i <> -100:
             basicA['nodes_removed'].append(basicA['nodes_removed'].pop()+basicA['isolated_nodes_removed'][i])
         if optionA['failed_no_con_to_a_source'] != False:
@@ -366,22 +506,26 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath):
 
         i += 1  
     else:
+        tools.write_to_log_file(logfilepath, 'No analysis type selected.)
         raise error_classes.GeneralError('Error. No analysis type has been selected.')
-    
+        return 1003        
+        
     #----------------re-package all data into respective containers------------
     networks = GA, GB, GtempA, GtempB
     metrics = basicA,basicB,optionA, optionB,dependency,cascading
     graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B
     parameters =  failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
-    
-    return graphparameters,parameters,metrics,iterate
+    var = graphparameters,parameters,metrics,iterate
+    return var
  
 '''calcualte values at end of step'''       
-def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basic_metrics,option_metrics,to_b_nodes,from_a_nodes,source_nodes,net):
+def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basic_metrics,option_metrics,to_b_nodes,from_a_nodes,source_nodes,logfilepath,net):
         '''
         Failure method has already been run. This checks for isolated nodes and
         subgraphs (goes throught the handling avraibles, then calculates metrics 
         required.)
+        
+        All errors from here bgein with 20. e.g. 2003
         '''
         
         #------------unpack the holding variables------------------------------
@@ -392,7 +536,11 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         
         if handling_variables['remove_isolates']==True:
             if Gtemp.number_of_edges() <> 0:
-                Gtemp,node_list,basic_metrics,option_metrics,isolated_nodes,to_b_nodes,from_a_nodes,a_to_b_edges = network_handling.remove_isolates(Gtemp,node_list,option_metrics,basic_metrics,to_b_nodes,from_a_nodes,a_to_b_edges,net)
+                var = network_handling.remove_isolates(Gtemp,node_list,option_metrics,basic_metrics,to_b_nodes,from_a_nodes,a_to_b_edges,net)
+                if type(var) == int:
+                    return var
+                else:
+                    Gtemp,node_list,basic_metrics,option_metrics,isolated_nodes,to_b_nodes,from_a_nodes,a_to_b_edges = var
                 #not too sure why I need separate things for net a and b??
                 if net == 'B':         
                     if option_metrics['isolated_nodes']<>False:option_metrics['isolated_nodes'].append(isolated_nodes)
@@ -427,7 +575,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             #if subgraphs are to be removed for the analysis ie. for infrastructure modelling
             if handling_variables['remove_subgraphs']==True:
                 #remove subgraphs and record the details of them
-                Gtemp, subnodes, nsubnodes, nodelists, edgelists = network_handling.handle_sub_graphs(Gtemp) 
+                var = network_handling.handle_sub_graphs(Gtemp) 
+                if type(var) == int:
+                    return var
+                else:
+                    Gtemp, subnodes, nsubnodes, nodelists, edgelists = var
+                
                 if option_metrics['subnodes'] <> False: option_metrics['subnodes'].append(subnodes)
                 basic_metrics['no_of_nodes_removed'].append(basic_metrics['no_of_nodes_removed'].pop()+nsubnodes)
                 if option_metrics['no_of_subnodes'] <> False: option_metrics['no_of_subnodes'].append(nsubnodes)
@@ -442,8 +595,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                         try: source_nodes.remove(nd)
                         except: pass
                 
-                node_list, to_b_nodes, from_a_nodes =  network_handling.clean_node_lists(subnodes,node_list,to_b_nodes,from_a_nodes)
-                
+                var =  network_handling.clean_node_lists(subnodes,node_list,to_b_nodes,from_a_nodes)
+                if type(var) == int:
+                    return var
+                else:
+                    node_list, to_b_nodes, from_a_nodes = var
+                    
                 temp = nx.connected_component_subgraphs(Gtemp)
                 basic_metrics['no_of_components'].append(len(temp))
                 
@@ -486,7 +643,11 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             option_metrics['size_of_components'].append(temp)
         
         if option_metrics['maximum_betweenness_centrality']<>False or option_metrics['avg_betweenness_centrality']<>False:
-            temp = nx.betweenness_centrality(Gtemp)
+            try:
+                temp = nx.betweenness_centrality(Gtemp)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed when calculating the betweenness centrality.')
+                return 2006
             if option_metrics['maximum_betweenness_centrality']<>False:
                 option_metrics['maximum_betweenness_centrality'].append(max(temp.values()))
             if option_metrics['avg_betweenness_centrality']<>False:
@@ -499,13 +660,25 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 
         if option_metrics['clustering_coefficient']<>False:
             option_metrics['clustering_coefficient'].append(nx.average_clustering(Gtemp))
-            temp = nx.clustering(Gtemp)
+            try:
+                temp = nx.clustering(Gtemp)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed when calculating the clustering coefficient.')
+                return 2007
             if store_n_e_atts == True:
                     for key in temp: Gtemp.node[key]['clustering_coefficient'] = temp[key]
         if option_metrics['transitivity']<>False:
-            option_metrics['transitivity'].append(nx.transitivity(Gtemp))
+            try:
+                option_metrics['transitivity'].append(nx.transitivity(Gtemp))
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed to calculate the transitivity.')
+                return 2008
         if option_metrics['square_clustering']<>False:
-            temp = nx.square_clustering(Gtemp)
+            try:
+                temp = nx.square_clustering(Gtemp)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed to calculate the square clustering coefficient.')
+                return 2009
             avg=0.0
             for val in temp.values():
                 avg+=val
@@ -513,10 +686,18 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if store_n_e_atts == True:
                     for key in temp: Gtemp.node[key]['square_clustering'] = temp[key]
         if option_metrics['avg_degree_connectivity'] <> False:
-            temp = nx.average_degree_connectivity(Gtemp)
+            try:
+                temp = nx.average_degree_connectivity(Gtemp)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed calculating the average degree connectivity.')
+                return 2010
             option_metrics['avg_degree_connectivity'].append(temp.values())
         if option_metrics['avg_closeness_centrality'] <> False:
-            temp = nx.closeness_centrality(Gtemp)
+            try:
+                temp = nx.closeness_centrality(Gtemp)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed calculating the closeness centrality.')
+                return 2011
             avg=0.0
             for val in temp.values():
                 avg+=val
@@ -524,7 +705,11 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
             if store_n_e_atts == True:
                     for key in temp: Gtemp.node[key]['avg_closeness_centrality'] = temp[key]
         if option_metrics['avg_neighbor_degree'] <> False:
-            temp = nx.average_neighbor_degree(Gtemp)
+            try:
+                temp = nx.average_neighbor_degree(Gtemp)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed to calculate the average neighbor degree.')
+                return 2012
             avg=0.0
             for val in temp.values():
                 avg+=val
@@ -562,56 +747,84 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         elif numofedges <> 0:
             #---------------average path length calculations-------------------
             if option_metrics['avg_path_length'] <> False or option_metrics['avg_path_length_of_components']<>False:
-                #claculates the average path length of the whole network if not dissconnected
-                #average = network_handling.whole_graph_av_path_length(Gtemp)
-                temp=[]
-                for g in nx.connected_component_subgraphs(Gtemp):
-                    temp.append(nx.average_shortest_path_length(g))
-                if option_metrics['avg_path_length']<>False:
-                    avg = 0
-                    for dist in temp:
-                        avg+= dist
-                    option_metrics['avg_path_length'].append(avg/len(temp))
-                if option_metrics['avg_path_length_of_components']<>False:
-                    option_metrics['avg_path_length_of_components'].append(temp)
-            
-            if option_metrics['avg_path_length_of_giant_component'] <> False and option_metrics['avg_path_length']<>False:
-                option_metrics['avg_path_length_of_giant_component'].append(temp[0])
-            elif option_metrics['avg_path_length_of_giant_component']<>False:
-                av_len = nx.average_shortest_path_length(nx.connected_component_subgraphs(Gtemp)[0])
-                option_metrics['avg_path_length_of_giant_component'].append(av_len)        
-            
-            length_att = False
-            if option_metrics['avg_geo_path_length']<>False or option_metrics['avg_geo_path_length_of_components']<>False:
-                for edge in Gtemp.edges(data=True):
-                    for key in edge[2].keys():
-                        if key == str(length):
-                            length_att = True
-                            break
-                if length_att == True:
+                try:
+                    #claculates the average path length of the whole network if not dissconnected
+                    #average = network_handling.whole_graph_av_path_length(Gtemp)
                     temp=[]
                     for g in nx.connected_component_subgraphs(Gtemp):
-                        temp.append(nx.average_shortest_path_length(g,length_att))
-                    if option_metrics['avg_geo_path_length']<>False:
+                        try:
+                            temp.append(nx.average_shortest_path_length(g))
+                        except:
+                            # could not calculate the averag path length
+                            tools.write_to_log_file(logfilepath, 'Escaped from calculating the average path length of a subgraph. Did not add it to the list.')
+                            pass
+                    if option_metrics['avg_path_length']<>False:
                         avg = 0
                         for dist in temp:
                             avg+= dist
-                        option_metrics['avg_geo_path_length'].append(avg/len(temp))
-                    if option_metrics['avg_geo_path_length_of_components']<>False:
-                        option_metrics['avg_geo_path_length_of_components'].append(temp)
-                else:
-                    if option_metrics['avg_geo_path_length']<>False:
-                        option_metrics['avg_geo_path_length'].append(None)
-                    if option_metrics['avg_geo_path_length_of_components']<>False:
-                        option_metrics['avg_geo_path_length_of_components'].append(None)
+                        option_metrics['avg_path_length'].append(avg/len(temp))
+                    if option_metrics['avg_path_length_of_components']<>False:
+                        option_metrics['avg_path_length_of_components'].append(temp)
+                except:
+                    tools.write_to_log_file(logfilepath,'Failed to calculate the average path length.')
+                    return 2001
+            if option_metrics['avg_path_length_of_giant_component'] <> False and option_metrics['avg_path_length']<>False:
+                try:
+                    option_metrics['avg_path_length_of_giant_component'].append(temp[0])
+                except:
+                    tools.write_to_log_file(logfilepath, 'Failed to get average path length of giant component. List must be empty.')
+                    return 2002
+            elif option_metrics['avg_path_length_of_giant_component']<>False:
+                try:
+                    av_len = nx.average_shortest_path_length(nx.connected_component_subgraphs(Gtemp)[0])
+                    option_metrics['avg_path_length_of_giant_component'].append(av_len)        
+                except:
+                    tools.write_to_log_file(logfilepath, 'Failed to calculate the average path length of the giant component.')
+                    return 2003
             
-            if option_metrics['avg_geo_path_length_of_giant_component'] <> False and option_metrics['avg_geo_path_length']<>False:
-                option_metrics['avg_geo_path_length_of_giant_component'].append(temp[0])
-            elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == True:
-                av_len = nx.average_shortest_path_length(nx.connected_component_subgraphs(Gtemp)[0],length_att)
-                option_metrics['avg_geo_path_length_of_giant_component'].append(av_len)
-            elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == False:
-                option_metrics['avg_geo_path_length_of_giant_component'].append(None)
+            length_att = False
+            if option_metrics['avg_geo_path_length']<>False or option_metrics['avg_geo_path_length_of_components']<>False:
+                try:                
+                    for edge in Gtemp.edges(data=True):
+                        for key in edge[2].keys():
+                            if key == str(length):
+                                length_att = True
+                                break
+                    if length_att == True:
+                        temp=[]
+                        for g in nx.connected_component_subgraphs(Gtemp):
+                            try:
+                                temp.append(nx.average_shortest_path_length(g,length_att))
+                            except:
+                                # could not calculate the geographic average path length
+                                tools.write_to_log_file(logfilepath, 'Escaped from calculating the geographic average path length of a subgraph. Did not add anything to the list.')
+                                pass
+                        if option_metrics['avg_geo_path_length']<>False:
+                            avg = 0
+                            for dist in temp:
+                                avg+= dist
+                            option_metrics['avg_geo_path_length'].append(avg/len(temp))
+                        if option_metrics['avg_geo_path_length_of_components']<>False:
+                            option_metrics['avg_geo_path_length_of_components'].append(temp)
+                    else:
+                        if option_metrics['avg_geo_path_length']<>False:
+                            option_metrics['avg_geo_path_length'].append(None)
+                        if option_metrics['avg_geo_path_length_of_components']<>False:
+                            option_metrics['avg_geo_path_length_of_components'].append(None)
+                except:
+                        tools.write_to_log_file(logfilepath, 'Failed during the geographic average path length calculations.')
+                        return 2004
+            try:
+                if option_metrics['avg_geo_path_length_of_giant_component'] <> False and option_metrics['avg_geo_path_length']<>False:
+                    option_metrics['avg_geo_path_length_of_giant_component'].append(temp[0])
+                elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == True:
+                    av_len = nx.average_shortest_path_length(nx.connected_component_subgraphs(Gtemp)[0],length_att)
+                    option_metrics['avg_geo_path_length_of_giant_component'].append(av_len)
+                elif option_metrics['avg_geo_path_length_of_giant_component']<>False and length_att == False:
+                    option_metrics['avg_geo_path_length_of_giant_component'].append(None)
+            except:
+                tools.write_to_log_file(logfilepath, 'Failed calculating/getting the average geographic average path length of the giant component.')                
+                return 2005
                 
             if option_metrics['diameter'] <> False:
                 if len(nx.connected_component_subgraphs(Gtemp)) > 1:
@@ -637,15 +850,28 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     sumh += degree_list[d]
                 option_metrics['avg_degree'].append(sumh/(Gtemp.number_of_nodes()))
                 Gtemp.graph['average_degree']=sumh/Gtemp.number_of_nodes()
-            if option_metrics['density']<>False:option_metrics['density'].append(nx.density(Gtemp))
+            if option_metrics['density']<>False:
+                try:
+                    option_metrics['density'].append(nx.density(Gtemp))
+                except:
+                    tools.write_to_log_file(logfilepath, 'Fialed to calculate the density of the network.')
+                    return 2013
 
             if option_metrics['assortativity_coefficient']<>False:
-                temp = nx.degree_assortativity_coefficient(Gtemp)
+                try:
+                    temp = nx.degree_assortativity_coefficient(Gtemp)
+                except:
+                    tools.write_to_log_file(logfilepath,'Failed to calculate the degree assortativity coefficient.')
+                    return 2014
                 if str(temp) == 'nan': temp = 0.0
                 option_metrics['assortativity_coefficient'].append(temp)
             
             if option_metrics['avg_degree_centrality']<>False:
-                temp = nx.degree_centrality(Gtemp)
+                try:
+                    temp = nx.degree_centrality(Gtemp)
+                except:
+                    tools.write_to_log_file(logfilepath, 'Failed to calculate the degree centrality.')
+                    return 2015
                 avg=0
                 for val in temp.values():
                     avg+=val
@@ -653,12 +879,13 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
         
         #add the number of nodes left to the respective list
         basic_metrics['no_of_nodes'].append(Gtemp.number_of_nodes())
-
-        return iterate,Gtemp,i,to_b_nodes,from_a_nodes,a_to_b_edges,node_list,basic_metrics,option_metrics,source_nodes 
+        
+        var = iterate,Gtemp,i,to_b_nodes,from_a_nodes,a_to_b_edges,node_list,basic_metrics,option_metrics,source_nodes
+        return var
 
 def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_e_atts, length, a_to_b_edges, source_nodes_A, source_nodes_B):
     
-    #unpack the paarameter
+    #unpack the parameter
     #----------------unpack the metrics----------------------------------------
     basicA, basicB, optionA, optionB, dependency, cascading = metrics    
     #----------------sort a_to_b edges-----------------------------------------
@@ -746,11 +973,17 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         optionA['failed_no_con_to_a_source']=[[]]
     else: optionA['failed_no_con_to_a_source']=False
     
-    if optionA['avg_path_length']==True:optionA['avg_path_length']=[nx.average_shortest_path_length(GA)] 
+    if optionA['avg_path_length']==True:
+        optionA['avg_path_length'] = [nx.average_shortest_path_length(GA)] 
     if optionA['avg_path_length_of_components']==True or optionA['avg_path_length_of_giant_component']==True:
         temp = []
         for g in nx.connected_component_subgraphs(GA):
-            temp.append(nx.average_shortest_path_length(GA))
+            try:
+                temp.append(nx.average_shortest_path_length(g))
+            except:
+                # could not calculate the average path length
+                pass
+        
         if optionA['avg_path_length_of_components']== True:optionA['avg_path_length_of_components']=[temp]
         if optionA['avg_path_length_of_giant_component']==True:optionA['avg_path_length_of_giant_component']=[temp[0]]
     if optionA['avg_geo_path_length']==True or optionA['avg_geo_path_length_of_components']==True or optionA['avg_geo_path_length_of_giant_component']==True:
@@ -762,7 +995,11 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
                         if key == str(length):
                             temp = []
                             for g in nx.connected_component_subgraphs(GA):
-                                temp.append(nx.average_shortest_path_length(g,length))
+                                try:
+                                    temp.append(nx.average_shortest_path_length(g,length))
+                                except:
+                                    # could not calculate the average path length
+                                    pass
                             if optionA['avg_geo_path_length']==True:
                                 avg=0
                                 for val in temp:
@@ -883,13 +1120,20 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
                 
         if optionB['density']==True:optionB['density']=[nx.density(GB)]
         
-        if optionB['avg_path_length']==True:optionB['avg_path_length']=[nx.average_shortest_path_length(GB)] 
+        if optionB['avg_path_length']==True:
+            optionB['avg_path_length']=[nx.average_shortest_path_length(GB)] 
         if optionB['avg_path_length_of_components']==True or optionB['avg_path_length_of_giant_component']==True:
             temp = []
             for g in nx.connected_component_subgraphs(GB):
-                temp.append(nx.average_shortest_path_length(GB))   
-            if optionB['avg_path_length_of_components']==True:optionB['avg_path_length_of_components']=[temp]
-            if optionB['avg_path_length_of_giant_component']==True:optionB['avg_path_length_of_giant_component']=[temp[0]]
+                try:
+                    temp.append(nx.average_shortest_path_length(g))  
+                except:
+                    # could not calculate the average path length
+                    pass
+            if optionB['avg_path_length_of_components']==True:
+                optionB['avg_path_length_of_components']=[temp]
+            if optionB['avg_path_length_of_giant_component']==True:
+                optionB['avg_path_length_of_giant_component']=[temp[0]]
         if optionB['avg_geo_path_length']==True or optionB['avg_geo_path_length_of_components']==True or optionB['avg_geo_path_length_of_giant_component']==True:
             #need to check that the edges have an attribute 'length'
             for edge in GB.edges(data=True):
@@ -899,7 +1143,11 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
                             if key == str(length):
                                 temp = []
                                 for g in nx.connected_component_subgraphs(GB):
-                                    temp.append(nx.average_shortest_path_length(g,length))
+                                    try:
+                                        temp.append(nx.average_shortest_path_length(g,length))
+                                    except:
+                                        # could not calculate the average path length
+                                        pass
                                 if optionB['avg_geo_path_length']==True:
                                     avg=0
                                     for val in temp:
@@ -1011,7 +1259,8 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     metrics = basicA,basicB,optionA,optionB,dependency_metrics,cascading_metrics
     networks = GA, GB, GtempA, GtempB
     graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes 
-    return networks,metrics,graphparameters
+    var = networks,metrics,graphparameters
+    return var
     
     
 def default_parameters(fileName, failure, basicA=None, optionA=None, basicB=None, optionB=None):

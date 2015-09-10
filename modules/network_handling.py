@@ -18,22 +18,25 @@ def check_node_removed(node, isolated_nodes):
     still part of the network. Used by cascading failure model and 
     check_dependency_edges function'''
     #create required variables
-    REMOVED = False    
+    REMOVED = False
     h = 0   
     #for all isoalted nodes, check if node is part of the list
-    while h < len(isolated_nodes):
-        if type(isolated_nodes[h]) == int:
-            if node == isolated_nodes[h]:
-                    REMOVED = True
-        else:
-            p = 0
-            print isolated_nodes[h]
-            print type(isolated_nodes[h])
-            while p < len(isolated_nodes[h]):
-                 if node == isolated_nodes[h][p]:
+    try:
+        while h < len(isolated_nodes):
+            if type(isolated_nodes[h]) == int:
+                if node == isolated_nodes[h]:
                         REMOVED = True
-                 p += 1
-        h += 1
+            else:
+                p = 0
+                print isolated_nodes[h]
+                print type(isolated_nodes[h])
+                while p < len(isolated_nodes[h]):
+                     if node == isolated_nodes[h][p]:
+                            REMOVED = True
+                     p += 1
+            h += 1
+    except:
+        return 4001
     return REMOVED
               
 def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edges,net):
@@ -44,7 +47,10 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
     Return: '''
    
     #remove any isolated nodes and assocaited edges      
-    isolatednodes = nx.isolates(G)
+    try:
+        isolatednodes = nx.isolates(G)
+    except:
+        return 4010
     if G.number_of_edges() == 0: 
         #print 'The number of nodes left is:', G.number_of_nodes()
         raise error_classes.GraphError('Error. The network is dissconnected, there are no edges left in the network.')
@@ -54,14 +60,17 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
        
     j = 0
     #loop through the isolated nodes and remove from the node list
-    while j < len(isolatednodes):
-        k = 0 
-        while k < len(node_list):
-            if isolatednodes[j] == node_list[k]:
-                node_list.remove(node_list[k])
-                k -= 1
-            k += 1
-        j += 1
+    try:
+        while j < len(isolatednodes):
+            k = 0 
+            while k < len(node_list):
+                if isolatednodes[j] == node_list[k]:
+                    node_list.remove(node_list[k])
+                    k -= 1
+                k += 1
+            j += 1
+    except:
+        return 4012
 
     #update some of the lists to record the simulation process
     
@@ -70,20 +79,25 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
         for nd in isolatednodes:
             v = 0
             found = False
-            while v < len(a_to_b_edges):
-                if int(nd) == int(a_to_b_edges[v][1]):
-                    a_to_b_edges.pop(v)
-                    found = True
-                    tot += 1
-                    v -= 1
-                    if found==False:
-                        print 'node is:', nd
-                        for item in a_to_b_edges:
-                            print item[1]
-                        exit()
-                v += 1
-    #print 'RUNNING REMOVE_ISOLATES FROM',net,'. Number of ISOLATES removed:',len(isolatednodes),'(',isolatednodes,');','Dependency edges removed:', tot
-    return G,node_list,basic,option,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges
+            try:
+                while v < len(a_to_b_edges):
+                    if int(nd) == int(a_to_b_edges[v][1]):
+                        
+                        a_to_b_edges.pop(v)
+                        found = True
+                        tot += 1
+                        v -= 1
+                        if found==False:
+                            print 'node is:', nd
+                            for item in a_to_b_edges:
+                                print item[1]
+                            exit()
+                    v += 1
+            except:
+                return 4013
+                
+    var = G,node_list,basic,option,isolatednodes,to_b_nodes,from_a_nodes,a_to_b_edges
+    return var 
     
 def handle_sub_graphs(G):
     ''''Used for removing subgraphs from a network, but converting them to 
@@ -94,20 +108,24 @@ def handle_sub_graphs(G):
         U_G = G.to_undirected()
     else: U_G = G
     
-    subgraphlist = nx.connected_component_subgraphs(U_G) #create a list of subgraphs
+    try:
+        subgraphlist = nx.connected_component_subgraphs(U_G) #create a list of subgraphs
+    except:
+        return 4020
 
     subnodes = [] #list of subnodes
     numofsubnodes = 0 #to store the number of subnodes in total at each iteration
 
-    i = 0    
+    i = 0
     for g in subgraphlist:
         if i <> 0:
             subnodes.append(g.nodes())
             numofsubnodes+=g.number_of_nodes()
         i+=1
     G = subgraphlist[0]
-
-    return G, subnodes, numofsubnodes, G.nodes(),G.edges()
+    
+    var = G, subnodes, numofsubnodes, G.nodes(),G.edges()
+    return var
 
 '''interdependency function'''
 def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges,temp,INTERDEPENDENCY): 
@@ -133,10 +151,15 @@ def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB
             if node == edge[0]:
                 REMOVED = check_node_removed(edge[1], nx.isolates(GtempB)) #check node in B is still there - it should be                
                 #REMOVED = check_node_removed(edge[1], optionB['subnodes'], optionB['isolated_nodes']) #check node in B is still there - it should be
-                if not REMOVED: 
-                    GtempB.remove_node(edge[1])
-                    a_to_b_edges.pop(z)
-                    nodes_removed_from_b.append(edge[1])
+                if type(REMOVED) == int:
+                    return REMOVED
+                elif not REMOVED: 
+                    try:
+                        GtempB.remove_node(edge[1])
+                        a_to_b_edges.pop(z)
+                        nodes_removed_from_b.append(edge[1])
+                    except:
+                        return 4030
                     z-=1
                 else:
                     pass
@@ -144,8 +167,8 @@ def check_dependency_edges(networks,nodes_to_check,basicA,basicB,optionA,optionB
             z += 1                
                  
     networks =  GA, GB, GtempA, GtempB
-    args = networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges
-    return args
+    var = networks,nodes_removed_from_b,basicA,basicB,optionA,optionB,to_b_nodes,from_a_nodes,a_to_b_edges
+    return var
 
 def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
         '''Clean the node lists which are needed for some forms of analysis. 
@@ -155,30 +178,44 @@ def clean_node_lists(subn,node_list, to_b_nodes, from_a_nodes):
         Output:  '''
         j = 0
         #loop through all nodes in subgraphs and remove from the node list
-        while j < len(subn):
-            k = 0
-            while k < len(node_list):
-                if subn[j] == node_list[k]:
-                    node_list.remove(node_list[k])
-                    k -= 1
-                k += 1
-            j += 1
+        try:
+            while j < len(subn):
+                k = 0
+                while k < len(node_list):
+                    if subn[j] == node_list[k]:
+                        try:
+                            node_list.remove(node_list[k])
+                        except:
+                            return 4040
+                        k -= 1
+                    k += 1
+                j += 1
+        except:
+            return 4042
             
         #remove from to and from lists where the dependency is broken as the to node has been removed as part of a subgraph
-        v = 0
-        while v < len(subn):
-            vd = 0
-            while vd < len(subn[v]): #double set of brackets for the subnodes, so double loop required
-                vf = 0
-                while vf < len(to_b_nodes):
-                    if subn[v][vd] == to_b_nodes[vf]:
-                        to_b_nodes.pop(vf) #remove from the to list
-                        from_a_nodes.pop(vf) #remove from the from list
-                        vf-=1 #adjust vf so no value in list is missed
-                    vf += 1
-                vd += 1
-            v += 1
-        return node_list, to_b_nodes, from_a_nodes
+        try:
+            v = 0
+            while v < len(subn):
+                vd = 0
+                while vd < len(subn[v]): #double set of brackets for the subnodes, so double loop required
+                    vf = 0
+                    while vf < len(to_b_nodes):
+                        if subn[v][vd] == to_b_nodes[vf]:
+                            try:
+                                to_b_nodes.pop(vf) #remove from the to list
+                                from_a_nodes.pop(vf) #remove from the from list
+                            except:
+                                return 4041
+                            vf-=1 #adjust vf so no value in list is missed
+                        vf += 1
+                    vd += 1
+                v += 1
+        except:
+            return 4043
+            
+        var = node_list, to_b_nodes, from_a_nodes
+        return var
 
 def check_connected_to_source_nodes(Gtemp, source_nodes,nodes_removed):
     """
@@ -192,16 +229,22 @@ def check_connected_to_source_nodes(Gtemp, source_nodes,nodes_removed):
         connected = False
         for sn in source_nodes:
             #for each check path to a source
-            if nx.has_path(Gtemp,nd,sn) == True:
-                #break if has_path returns True
-                connected = True
-                break
+            try:
+                if nx.has_path(Gtemp,nd,sn) == True:
+                    #break if has_path returns True
+                    connected = True
+                    break
+            except:
+                return 4050
         #if false for all, then remove from network and add to removed list
         if connected == False:
-            Gtemp.remove_node(nd) 
+            try:
+                Gtemp.remove_node(nd) 
+            except:
+                return 4051
             nodes_removed.append(nd)
-            
-    return Gtemp, nodes_removed
+    var = Gtemp, nodes_removed
+    return var
 
 
 def whole_graph_av_path_length(Gtemp,length=''):
@@ -209,17 +252,25 @@ def whole_graph_av_path_length(Gtemp,length=''):
     #create the required varaibles
     number_of_components_used = 0 
     average = 0
+    
     #calcualte the average path legnth for all subgraphs with more than one node
-    for g in nx.connected_component_subgraphs(Gtemp):
-        if nx.number_of_nodes(g) <= 1:
-            pass
-        else:
-            average += nx.average_shortest_path_length(g,length)     
-            number_of_components_used += 1            
+    try:
+        for g in nx.connected_component_subgraphs(Gtemp):
+            if nx.number_of_nodes(g) <= 1:
+                pass
+            else:
+                try:
+                    average += nx.average_shortest_path_length(g,length)     
+                except:
+                    return 4060
+                number_of_components_used += 1
+    except:
+        return 4061
+        
     #calcualte the average if the average is greater than zero
     if average == 0:
         pass
     else:            
-        average = average/number_of_components_used
+        average = float(average)/number_of_components_used
     return average
 
