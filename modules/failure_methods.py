@@ -218,24 +218,24 @@ def flow_cascading_failure(G,NO_ISOLATES, INTERDEPENDENCY,flow_key,cap_key):
         try:
             edge[2][flow_key]
         except:
-            print 'Could not find %s attribute in an edge.' %flow_key
+            print('Could not find %s attribute in an edge.' %flow_key)
             raise
         try:
             edge[2][cap_key]
         except:
-            print 'Could not find %s attribute in an edge.' %cap_key
+            print('Could not find %s attribute in an edge.' %cap_key)
             raise
     
     for node in G.nodes(data=True):
         try:
             node[1][flow_key]
         except:
-            print 'Could not find %s attribute in a node.' %flow_key
+            print('Could not find %s attribute in a node.' %flow_key)
             raise
         try:
             node[1][cap_key]
         except:
-            print 'Could not find %s attribute in a node.' %cap_key
+            print('Could not find %s attribute in a node.' %cap_key)
             raise
     
     #remove any edge where flow is greater than capacity        
@@ -279,7 +279,7 @@ def geo_failure(G,shp_file):
     Given a shapefile, identifies those nodes within the failure zone.
     '''
     
-    print 'THIS NEEDS UPDATING'
+    print('THIS NEEDS UPDATING')
     import shapefile
     coords = []
     try:

@@ -28,8 +28,8 @@ def check_node_removed(node, isolated_nodes):
                         REMOVED = True
             else:
                 p = 0
-                print isolated_nodes[h]
-                print type(isolated_nodes[h])
+                print(isolated_nodes[h])
+                print(type(isolated_nodes[h]))
                 while p < len(isolated_nodes[h]):
                      if node == isolated_nodes[h][p]:
                             REMOVED = True
@@ -88,9 +88,9 @@ def remove_isolates(G,node_list,option,basic,to_b_nodes,from_a_nodes,a_to_b_edge
                         tot += 1
                         v -= 1
                         if found==False:
-                            print 'node is:', nd
+                            print('node is:', nd)
                             for item in a_to_b_edges:
-                                print item[1]
+                                print(item[1])
                             exit()
                     v += 1
             except:
@@ -118,7 +118,7 @@ def handle_sub_graphs(G):
 
     i = 0
     for g in subgraphlist:
-        if i <> 0:
+        if i != 0:
             subnodes.append(g.nodes())
             numofsubnodes+=g.number_of_nodes()
         i+=1

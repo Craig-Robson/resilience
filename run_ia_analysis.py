@@ -169,7 +169,7 @@ cascading = None
 metrics = basic_metrics_A, basic_metrics_B, option_metrics_A, option_metrics_B, dependency, cascading  
 
 #------------------option to set the attribute which contins the length of the edges
-if option_metrics_A['avg_geo_path_length'] <> False: length = 'shape_leng'
+if option_metrics_A['avg_geo_path_length'] != False: length = 'shape_leng'
 else: length = None
 
 #------------------file names for csv based analysis-------------------------
@@ -179,8 +179,8 @@ file_2_name = 'dependencey_test_n2'
 #-----------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------run some checks-----------------------------------------
-if failure['interdependency']==True: print 'This functionality is not currently available.'; exit()
-if failure['cascading']==True: print 'WARNING! This functionality has not been tested fully yet.'
+if failure['interdependency']==True: print('This functionality is not currently available.'); exit()
+if failure['cascading']==True: print('WARNING! This functionality has not been tested fully yet.')
 
 #------------------analysis methods----------------------------------------
 if use_nx_single == True:
@@ -270,6 +270,6 @@ elif mass == True and failure['stand_alone'] == True: #for mass single analysis
         NETWORK_NAME, conn = network_data.tree_networks()
         tools.analyse_existing_networks(NETWORK_NAME, conn, db, parameters, noioa, use_db, use_csv, logfilepath, nx_pgnet_location)
     else:
-        print 'no networks selected'
+        print('no networks selected')
 else:
-    print 'combination of parameters is not correct'
+    print('combination of parameters is not correct')

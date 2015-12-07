@@ -155,7 +155,6 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
             #-------------unpack variables-------------------------------------
             basicA,basicB,optionA,optionB,interdependency,cascading = metrics
             networks,k,node_list,to_b_nodes,from_a_nodes,source_nodes_A, source_nodes_B = graphparameters
-            print('k is:', k)
 
             #-------------write networks to database---------------------------
             if write_step_to_db:
