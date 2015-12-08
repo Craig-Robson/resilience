@@ -14,6 +14,87 @@ import networkx as nx
 #specific modules
 import error_classes,tools,network_handling
 
+def create_dict_of_removals(G,failures_to_occur,node_to_fail_list,method):
+    '''
+    Creates a dict of nodes which are the x highest with the value left in the network. Can use a number of methods which must be entered in the function.
+    '''
+
+    if method == 'betweenness':
+        blist = nx.betweenness_centrality(G)
+    elif method == 'degree':
+        blist = nx.degree(G)
+    elif method == 'clustering':
+        blist = nx.clustering(G)
+
+    for key in blist.keys():
+        if len(node_to_fail_list) > 0:
+            min_val = min(node_to_fail_list.values())
+
+        if len(node_to_fail_list) < failures_to_occur:
+            node_to_fail_list[key] = blist[key]
+        elif blist[key] > min_val:
+
+            #remove min val
+            for key1 in blist.keys():
+                if blist[key1] == min_val:
+                    del node_to_fail_list[key1]
+                    break
+            #add new val
+            node_to_fail_list[key] = blist[key]
+
+    return node_to_fail_list
+
+def sequential_by_list(G,failures_to_occur,node_to_fail_list,method):
+    '''
+    Runs the sequential by list method. Takes parameters and method for node selection and uses/generates a list of nodes to remove. Removes the node with the greatest value.
+    '''
+    #if fewer nodes in the network than wanted for list reduce request
+    if G.number_of_nodes() < failures_to_occur:
+        failures_to_occur = G.number_of_nodes()
+
+    #if list has no nodes in, build list
+    if len(node_to_fail_list) == 0 or node_to_fail_list == {}:
+        node_to_fail_list = create_dict_of_removals(G,failures_to_occur,node_to_fail_list,method)
+    node = -99999
+
+    if len(node_to_fail_list) != 0:
+        use_next = True
+        while use_next == True:
+            # if the list becomes zero while trying to remove a node
+            if len(node_to_fail_list) == 0:
+                node_to_fail_list = create_dict_of_removals(G,failures_to_occur,node_to_fail_list,method)
+            #get node with the max value and delete from the list
+            max_val = max(node_to_fail_list.values())
+            for key in node_to_fail_list.keys():
+                if node_to_fail_list[key] == max_val:
+                    node = key
+                    break
+            if node == -99999:
+                print('Did not find node to remove')
+                exit()
+            del node_to_fail_list[key]
+            # check node still in network - it may have been removed eg. isolated
+            try:
+                G.node[node]
+                use_next = False
+            except:
+                use_next = True
+
+    #if the node has the value of an error
+    if node == -99999:
+
+        raise error_classes.GeneralError('Error. An error occured when calculating the node to remove.')
+        return 3011
+    else:
+        #remove all edges and the node
+        try:
+            G.remove_node(node)
+        except:
+            return 3012
+
+    #return the eddited network and the node remvoed
+    var = G, node, node_to_fail_list
+    return var
 
 '''sequential failures'''
 def sequential_degree(G,INTERDEPENDENCY): #formally cascading
@@ -49,6 +130,15 @@ def sequential_degree(G,INTERDEPENDENCY): #formally cascading
     var = G, node
     return var
 
+def sequential_degree_by_list(G,INTERDEPENDENCY,failures_to_occur,node_to_fail_list):
+    '''
+    Allows for a list of the nodes to be removed to be calculated and saved allowing these to then be removed without re-calcualting those nodes to be removed. Uses node degree.
+    '''
+    method = 'degree'
+    var = sequential_by_list(G,failures_to_occur,node_to_fail_list,method)
+
+    return var
+
 def sequential_betweenness(G,INTERDEPENDENCY):
     '''Sequential analysis where the node to be removed on each iteration is
     that with the highest betweenness centrality value.
@@ -74,81 +164,12 @@ def sequential_betweenness(G,INTERDEPENDENCY):
     var = G, node
     return var
 
-def create_dict_of_removals(G,failures_to_occur,node_to_fail_list):
-    '''
-    Creates a dict of nodes which are the x highest with the value left in the network. It is hard coded that this is betweenness.
-    '''
-    print('Re-calculating list of nodes to remove')
-    blist = nx.betweenness_centrality(G)
-    for key in blist.keys():
-        if len(node_to_fail_list) > 0:
-            min_val = min(node_to_fail_list.values())
-
-        if len(node_to_fail_list) < failures_to_occur:
-            node_to_fail_list[key] = blist[key]
-        elif blist[key] > min_val:
-
-            #remove min val
-            for key1 in blist.keys():
-                if blist[key1] == min_val:
-                    del node_to_fail_list[key1]
-                    break
-            #add new val
-            node_to_fail_list[key] = blist[key]
-
-    return node_to_fail_list
-
 def sequential_betweenness_by_list(G,INTERDEPENDENCY,failures_to_occur,node_to_fail_list):
     '''
     Allows a list of nodes to be created and used to remove the nodes.
     '''
-    #if fewer nodes in the network than wanted for list reduce request
-    if G.number_of_nodes() < failures_to_occur:
-        failures_to_occur = G.number_of_nodes()
-
-    #if list has no nodes in, build list
-    if len(node_to_fail_list) == 0 or node_to_fail_list == {}:
-        node_to_fail_list = create_dict_of_removals(G,failures_to_occur,node_to_fail_list)
-    node = -99999
-
-    if len(node_to_fail_list) != 0:
-        use_next = True
-        while use_next == True:
-
-            # if the list becomes zero while trying to remove a node
-            if len(node_to_fail_list) == 0:
-                node_to_fail_list = create_dict_of_removals(G,failures_to_occur,node_to_fail_list)
-            #get node with the max value and delete from the list
-            max_val = max(node_to_fail_list.values())
-            for key in node_to_fail_list.keys():
-                if node_to_fail_list[key] == max_val:
-                    node = key
-                    break
-            if node == -99999:
-                print('Did not find node to remove')
-                exit()
-            del node_to_fail_list[key]
-            # check node still in network - it may have been removed eg. isolated
-            try:
-                G.node[node]
-                use_next = False
-            except:
-                use_next = True
-
-    #if the node has the value of an error
-    if node == -99999:
-
-        raise error_classes.GeneralError('Error. An error occured when calcualting the node to remove.')
-        return 3011
-    else:
-        #remove all edges and the node
-        try:
-            G.remove_node(node)
-        except:
-            return 3012
-
-    #return the eddited network and the node remvoed
-    var = G, node, node_to_fail_list
+    method = 'betweenness'
+    var = sequential_by_list(G,failures_to_occur,node_to_fail_list,method)
     return var
 
 def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
@@ -171,6 +192,14 @@ def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
         return 3020
     #return the network and the node which was removed
     var = G, node
+    return var
+
+def sequential_clustering_by_list(G,INTERDEPENDENCY,failures_to_occur,node_to_fail_list):
+    '''
+    Allows a list of nodes to be created and used to remove the nodes.
+    '''
+    method = 'clustering'
+    var = sequential_by_list(G,failures_to_occur,node_to_fail_list,method)
     return var
 
 def sequential_flow(G, NO_ISOLATES, INTERDEPENDENCY):

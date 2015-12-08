@@ -1591,6 +1591,7 @@ def default_parameters(fileName, failure, basicA=None, optionA=None, basicB=None
     return parameters
 
 def outputresults(graphparameters, parameters, metrics, logfilepath=None,multiterations=False):
-    print('reached here')
+    '''
+    '''
     values,error = outputs.outputresults(graphparameters, parameters, metrics, logfilepath, multiterations)
     return values
