@@ -52,7 +52,7 @@ def import_modules(resil_mod_loc):
     global tools, error_classes, failure_methods, network_handling, outputs
     import tools,error_classes,failure_methods,network_handling,outputs
 
-def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metrics=True):
+def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metrics=True,failures_to_occur=False):
     '''
     This is the main control function when the analysis is run directly from
     the script. This reads in the data provided and processes it as such to run
@@ -70,6 +70,8 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
         return 1102
     '''
     print('in main function')
+    print(GA.number_of_nodes())
+    print(GA.number_of_edges())
     try:
         var = tools.write_to_log_file(logfilepath, 'In function after importing modules')
     except:
@@ -77,12 +79,13 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
 
     metrics,failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length,source_nodes_A,source_nodes_B = parameters
     tools.write_to_log_file(logfilepath, 'Calculating the inital metrics.')
+
     #------set up the metrics for the analysis being asked for-----------------
     try:
         var = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges,source_nodes_A,source_nodes_B, logfilepath)
     except:
         return 1106
-
+    print('got this far')
     if type(var) == int:
         tools.write_to_log_file(logfilepath, 'Error code %s returned. Failure in metrics_initial function.')
         return var
@@ -92,7 +95,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
     networks,i,node_list,to_b_nodes,from_a_nodes = graphparameters
     basicA,basicB,optionA,optionB,interdependency_metrics,cascading_metrics = metrics
     parameters=failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length
-
+    node_to_fail_list = {}
     #------run some tests to check inputs are correct--------------------------
     try:
         var = tools.check_inputs(failure)
@@ -134,6 +137,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
     #run the analysis if seuquential or cascading == true
     if failure['sequential']==True or failure['cascading']==True or failure['stand_alone']==True:
         #while iterate is still true- network still has edges left
+
         while iterate == True:
             print('----------------------------------------------')
             print('i is:', i)
@@ -142,7 +146,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
             #-------------run the step-----------------------------------------
             graphparameters = networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A, source_nodes_B
             try:
-                var = step(graphparameters,parameters,metrics,iterate,logfilepath,when_to_calc_metrics)
+                var = step(graphparameters,parameters,metrics,iterate,logfilepath,when_to_calc_metrics,failures_to_occur,node_to_fail_list)
                 if type(var) == int:
                     tools.write_to_log_file(logfilepath,'Error code %s returned. Error running step %s.' %(var,i))
                     return var
@@ -224,7 +228,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
     tools.write_to_log_file(logfilepath,'Completed analysis!')
     return complete
 
-def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc_metrics):
+def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc_metrics,failures_to_occur,node_to_fail_list):
     '''
     Performs one time step of analysis when called.
     Inputs: graphparameters, parameters iterate
@@ -242,6 +246,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
     #----------------for sequential analysis only------------------------------
     #look at adding ability to remove nodes from both A and B
     if failure['sequential'] and failure['single']==False and failure['cascading']==False:
+        failures_to_occur = 3
         try:
             if failure['degree']:
                 #find node based on highest degree and remove it
@@ -251,11 +256,25 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
                 else: GtempA,node = var
 
             elif failure['betweenness']:
-                #find node with highest betweenness value and remove it
-                var = failure_methods.sequential_betweenness(GtempA,failure['interdependency'])
-                if type(var) == int:
-                    pass
-                else: GtempA,node = var
+                if failures_to_occur == False:
+                    #find node with highest betweenness value and remove it
+                    var = failure_methods.sequential_betweenness(GtempA,failure['interdependency'])
+                    if type(var) == int:
+                        pass
+                    else: GtempA,node = var
+                elif failures_to_occur == True:
+                    tools.write_to_log_file(logfilepath,'Error in finding node to remove. Fail to calc variable incorrectly set.')
+                    return 1001
+                else:
+                    #used to remove features using a pre-calculated list
+                    print('Using listing betweenness method')
+                    var = failure_methods.sequential_betweenness_by_list(GtempA,failure['interdependency'],failures_to_occur,node_to_fail_list)
+                    if type(var) == int:
+                        print(var)
+                        pass
+                    else:
+                        GtempA,node,node_to_fail_list = var
+                    print('Generated list:', node_to_fail_list)
 
             elif failure['from_list']!=False:
                 print('THIS METHOD HAS NOT BEEN FINISHED OR TESTED')
@@ -480,7 +499,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
         #------------run the actual analysis---------------------------------
         #analyse network B
         try:
-            var = analysis_B(parameters,iterate,GtempB,i,to_b_nodes,from_a_nodes,node_list,basicB,optionB,to_b_nodes,from_a_nodes,source_nodes_B,logfilepath,net='B',when_to_calc_metrics)
+            var = analysis_B(parameters,iterate,GtempB,i,to_b_nodes,from_a_nodes,node_list,basicB,optionB,to_b_nodes,from_a_nodes,source_nodes_B,when_to_calc_metrics,logfilepath,net='B')
             if type(var) == int:
                  tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed running the post component removal analysis.')
                  return
@@ -490,7 +509,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
             tools.write_to_log_file(logfilepath, 'Failed when running analysis of network B.')
         #analyse network A
         try:
-            var = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,source_nodes_A,logfilepath,net='A',when_to_calc_metrics)
+            var = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes,from_a_nodes,source_nodes_A,when_to_calc_metrics,logfilepath,net='A')
             if type(var) == int:
                 tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed running the post component removal analysis.' %(var))
                 return
@@ -536,7 +555,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
 
         #run the analysis
         try:
-            var = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,logfilepath,net='A',when_to_calc_metrics) #run the analysis
+            var = analysis_B(parameters,iterate,GtempA,i,to_b_nodes,from_a_nodes,node_list,basicA,optionA,to_b_nodes, from_a_nodes,source_nodes_A,when_to_calc_metrics,logfilepath,net='A') #run the analysis
             if type(var) == int:
                  tools.write_to_log_file(logfilepath, 'Error code %s returned. Failed running the post component removal analysis.')
                  return var
@@ -568,7 +587,7 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
     return var
 
 '''calcualte values at end of step'''
-def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basic_metrics,option_metrics,to_b_nodes,from_a_nodes,source_nodes,logfilepath,net,when_to_calc_metrics=True):
+def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basic_metrics,option_metrics,to_b_nodes,from_a_nodes,source_nodes,when_to_calc_metrics,logfilepath,net):
         '''
         Failure method has already been run. This checks for isolated nodes and
         subgraphs (goes throught the handling avraibles, then calculates metrics
@@ -653,9 +672,11 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     nodelists = Gtemp.nodes()
                     edgelists = Gtemp.edges()
                     #if subgraphs are to be removed for the analysis ie. for infrastructure modelling
+
                     if handling_variables['remove_subgraphs']==True:
                         #remove subgraphs and record the details of them
                         var = network_handling.handle_sub_graphs(Gtemp)
+
                         if type(var) == int:
                             return var
                         else:
@@ -688,10 +709,12 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
 
                     #if subgraphs are to be left as part of the network
                     elif handling_variables['remove_subgraphs']==False:
+
                         #get a list of all connected components
                         temp = nx.connected_component_subgraphs(Gtemp)
+                        number_of_components = nx.number_connected_components(Gtemp)
                         #add the number components to the respective list
-                        basic_metrics['no_of_components'].append(len(temp))
+                        basic_metrics['no_of_components'].append(number_of_components)
 
                         temp=[]
                         if option_metrics['subnodes']!=False:
@@ -736,7 +759,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
 
             print('i:',i)
             if when_to_calc_metrics != True: # if it has been set as number
-                print('Checking to calc metrics or not')
+                print('Checking to calc metrics or not:', when_to_calc_metrics)
                 calc_metrics = False
                 calc_value = 0
                 while calc_metrics == False:
@@ -841,7 +864,9 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
 
                     option_metrics['avg_closeness_centrality'].append(avg)
                     if store_n_e_atts == True:
-                            for key in temp: Gtemp.node[key]['avg_closeness_centrality'] = temp[key]
+                            for key in temp:
+                                Gtemp.node[key]['avg_closeness_centrality'] = temp[key]
+
                 if option_metrics['avg_neighbor_degree'] != False:
                     try:
                         temp = nx.average_neighbor_degree(Gtemp)
@@ -860,6 +885,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 #return 99999999999999
                 #exit()
             else:
+
                 if option_metrics['maximum_betweenness_centrality']!=False:
                     option_metrics['maximum_betweenness_centrality'].append(-9998)
                 if option_metrics['avg_betweenness_centrality']!=False:
@@ -878,6 +904,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                     option_metrics['avg_neighbor_degree'].append(-9998)
         except:
             return 2053
+
         #------------re-calc the number of edges-------------------------------
         #this is needed if subgraphs were removed
         try:
@@ -899,6 +926,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
 
         try:
             if numofedges == 0:
+
                 #set i really high so iteraion stops at the end of this step
                 i = -100
                 #add values for the metrics which are not set as False
@@ -937,6 +965,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
 
             #------------if the number of edge is greater than zero----------------
             elif numofedges != 0:
+
                 try:
                     #---------------average path length calculations-------------------
                     if option_metrics['avg_path_length'] != False or option_metrics['avg_path_length_of_components']!=False:
@@ -957,6 +986,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                                     return 2016
                             except:
                                 return 2017
+
                             try:
                                 tools.write_to_log_file(logfilepath,'Option_metrics[avg_path_length] = %s.' %(option_metrics['avg_path_length']))
                                 if option_metrics['avg_path_length']!=False:
@@ -1022,6 +1052,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                                 return 2004
                 except:
                     return 2052
+
                 try:
                     if option_metrics['avg_geo_path_length_of_giant_component'] != False and option_metrics['avg_geo_path_length']!=False:
                         option_metrics['avg_geo_path_length_of_giant_component'].append(temp[0])
@@ -1045,15 +1076,19 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 except:
                     return 203382
                 #-------------------other calculations-----------------------------
+
                 try:
                     if option_metrics['giant_component_size'] != False:
                         try:
                             giant_component = nx.connected_component_subgraphs(Gtemp)
+                            number_of_components = nx.number_connected_components(Gtemp)
                         except:
                             giant_component = None
                             #return 2031
+
                         if giant_component != None :
-                            if len(giant_component) > 1:
+
+                            if number_of_components > 1:
                                 # size of giant component if exists
                                 try:
                                     giant_component = giant_component[0]
@@ -1150,6 +1185,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 except:
                     return 20333
                 try:
+
                     if option_metrics['assortativity_coefficient']!=False:
                         try:
                             temp = nx.degree_assortativity_coefficient(Gtemp)
@@ -1210,6 +1246,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     '''
     Calculates the metrics initally prior to any nodes or edges being removed.
     '''
+    print('in metrics initial')
 
     #unpack the parameter
     #----------------unpack the metrics----------------------------------------
@@ -1251,7 +1288,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     try:
         basicA['no_of_isolated_nodes'] = [len(nx.isolates(GA))]
     except: return 1401
-
+    print('in basic metrics')
     basicA['isolated_nodes_removed'] = [[]]
     basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
 
@@ -1272,7 +1309,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         except: return 1403
 
         basicB['isolated_nodes_removed'] = [[]]
-
+    print('done basics')
     if store_n_e_atts == True:
         temp = nx.degree(GA)
         for key in temp:GA.node[key]['degree']=temp[key]
@@ -1280,363 +1317,20 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         for key in temp:GB.node[key]['degree']=temp[key]
 
         GA.graph['no_of_nodes']=nx.number_of_nodes(GA)
-
+    print('starting metric calcs')
     # start of metric calculations
     var = metric_calcs(GA, U_GA, optionA, handling_variables, source_nodes_A, length, store_n_e_atts, logfilepath)
     if type(var) == int:
         return var
     else: optionA = var
-    '''
-    try:
-        if optionA['size_of_components']==True:
-            temp = []
-            try:
-                if U_GA == None:
-                    for g in nx.connected_component_subgraphs(GA):
-                        temp.append(g.number_of_nodes())
-                else:
-                    for g in nx.connected_component_subgraphs(U_GA):
-                        temp.append(g.number_of_nodes())
-            except: return 1404
-
-            optionA['size_of_components']=[temp]
-    except: return 1420
-    '''
-
-    '''
-    try:
-        if optionA['giant_component_size']==True:
-            if U_GA == None:
-                optionA['giant_component_size']=[(nx.connected_component_subgraphs(GA)[0]).number_of_nodes()]
-            else: optionA['giant_component_size']=[(nx.connected_component_subgraphs(U_GA)[0]).number_of_nodes()]
-    except: return 1405
-    '''
-    '''
-    try:
-        if optionA['avg_size_of_components']==True:
-            if U_GA == None:
-                optionA['avg_size_of_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(GA)))]
-            else: optionA['avg_size_of_components']=[(GA.number_of_nodes()/len(nx.connected_component_subgraphs(U_GA)))]
-    except: return 1406
-    '''
-
-    '''
-    if optionA['isolated_nodes']==True:
-        optionA['isolated_nodes']=[nx.isolates(GA)]
-    '''
-    '''
-    if handling_variables['remove_isolates'] == True or optionA['no_of_isolated_nodes_removed'] == True:
-        optionA['no_of_isolated_nodes_removed']=[0]
-    if handling_variables['remove_subgraphs']== True or optionA['subnodes']==True or optionA['no_of_subnodes']==True:
-        optionA['subnodes']=[[]] #nodes removed as part of isolated graphs
-        optionA['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
-    '''
-    '''
-    # --------- moved up to here ---------
-    if optionA['source_nodes']==True and source_nodes_A != None:
-        temp = []
-        for val in source_nodes_A: temp.append(val)
-        optionA['source_nodes']=[temp]
-    else: optionA['source_nodes']=False
-
-
-    if optionA['failed_no_con_to_a_source']==True and source_nodes_A != None:
-        optionA['failed_no_con_to_a_source']=[[]]
-    else: optionA['failed_no_con_to_a_source']=False
-    '''
-    '''
-    temp = []
-    try:
-        if optionA['avg_path_length']==True:
-            temp = average_path_length(GA) # get list of average path length of each component
-            if temp != []:
-                optionA['avg_path_length'] = sum(temp)/len(temp)
-    except: return 1407
-    '''
-    '''
-    try:
-        if optionA['avg_path_length_of_components']==True or optionA['avg_path_length_of_giant_component']==True:
-            if temp == []:
-                temp = average_path_length(GA) # get list of average path length of each component
-
-        if optionA['avg_path_length_of_components']== True:optionA['avg_path_length_of_components']=[temp]
-        if optionA['avg_path_length_of_giant_component']==True:optionA['avg_path_length_of_giant_component']=[temp[0]]
-    except: return 1408
-    '''
-    '''
-    try:
-        if optionA['avg_geo_path_length']==True or optionA['avg_geo_path_length_of_components']==True or optionA['avg_geo_path_length_of_giant_component']==True:
-        #need to check that the edges have an attribute 'length'
-
-            for edge in GA.edges(data=True):
-                for edge in GA.edges(data=True):
-                    if len(edge[2].keys()) > 0:
-                        for key in edge[2].keys():
-                            if key == str(length):
-                                temp = []
-                                temp = average_path_length(GA,length) # get list of average path length of each component
-
-                                if optionA['avg_geo_path_length']==True:
-                                    optionA['avg_geo_path_length']=[sum(temp)/len(temp)]
-                                if optionA['avg_geo_path_length_of_components']==True:
-                                    optionA['avg_geo_path_length_of_components']=[temp]
-                                if optionA['avg_geo_path_length_of_giant_component']==True:
-                                    optionA['avg_geo_path_length_of_giant_component']=[temp[0]]
-                                break
-                    if optionA['avg_geo_path_length']== True:optionA['avg_geo_path_length']=[None]
-                    if optionA['avg_geo_path_length_of_components']==True: optionA['avg_geo_path_length_of_components']=[None]
-                    if optionA['avg_geo_path_length_of_giant_component']==True: optionA['avg_geo_path_length_of_giant_component']=[None]
-                    break
-                break
-    except: return 1409
-    '''
-    '''
-    if optionA['avg_degree']==True:
-        avg=0.0
-        for node in GA:
-            avg+=GA.degree(node)
-        optionA['avg_degree']=[avg/GA.number_of_nodes()]
-
-    if optionA['density']==True:
-        try:
-            optionA['density']=[nx.density(GA)]
-        except: return 1410
-    '''
-    '''
-    if optionA['maximum_betweenness_centrality']==True or optionA['avg_betweenness_centrality']==True:
-        try:
-            temp = nx.betweenness_centrality(GA)
-        except: 1411
-        if optionA['maximum_betweenness_centrality']<>False:
-            optionA['maximum_betweenness_centrality']=[max(temp.values())]
-        if optionA['avg_betweenness_centrality']<>False:
-            avg=0.0
-            for val in temp.values():
-                avg+=val
-            optionA['avg_betweenness_centrality']=[avg/len(temp)]
-        if store_n_e_atts == True:
-            for key in temp: GA.node[key]['betweenness_centrality'] = temp[key]
-    '''
-    '''
-    if optionA['assortativity_coefficient']==True:
-        try:
-            optionA['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GA)]
-        except: 1412
-    if optionA['clustering_coefficient']==True:
-        try:
-            optionA['clustering_coefficient']=[nx.average_clustering(GA)]
-        except: 1413
-        try:
-            temp = nx.clustering(GA)
-        except: 1414
-        if store_n_e_atts == True:
-            for key in temp: GA.node[key]['clustering'] = temp[key]
-    if optionA['transitivity']==True:
-        try:
-            optionA['transitivity']=[nx.transitivity(GA)]
-        except: return 1415
-    if optionA['square_clustering']==True:
-        try:
-            temp = nx.square_clustering(GA)
-        except: return 1416
-        avg=0.0
-        for val in temp.values():
-            avg+=val
-        optionA['square_clustering']=[avg/len(temp)]
-        if store_n_e_atts == True:
-            for key in temp: GA.node[key]['square_clustering'] = temp[key]
-    if optionA['avg_neighbor_degree']==True:
-        try:
-            temp = nx.average_neighbor_degree(GA)
-        except: 1417
-        avg=0.0
-        for val in temp.values():
-            avg+=val
-        optionA['avg_neighbor_degree']=[avg/len(temp)]
-        if store_n_e_atts == True:
-            for key in temp: GA.node[key]['avg_neighbor_degree'] = temp[key]
-    if optionA['avg_degree_connectivity']==True:
-        try:
-            temp = nx.average_degree_connectivity(GA)
-        except: return 1418
-        optionA['avg_degree_connectivity']=[temp.values()]
-    if optionA['avg_degree_centrality']==True:
-        try:
-            temp = nx.degree_centrality(GA)
-        except: return 1419
-        avg=0.0
-        for val in temp.values():
-            avg+=val
-        optionA['avg_degree_centrality']=[avg/len(temp)]
-        if store_n_e_atts == True:
-            for key in temp: GA.node[key]['avg_degree_centrality'] = temp[key]
-    if optionA['avg_closeness_centrality']==True:
-        try:
-            temp = nx.closeness_centrality(GA)
-        except: return 1420
-        avg=0.0
-        for val in temp.values():
-            avg+=val
-        optionA['avg_closeness_centrality']=[avg/len(temp)]
-        if store_n_e_atts == True:
-            for key in temp: GA.node[key]['avg_closeness_centrality'] = temp[key]
-    if optionA['diameter']==True:
-        try:
-            optionA['diameter']=[nx.diameter(GA)]
-        except: return 1421
-    '''
+    print('done first lot of calcs')
     if failure['stand_alone'] == False:
         var = metric_calcs(GB, U_GB, optionB, handling_variables, source_nodes_B, length, store_n_e_atts, logfilepath)
 
         if type(var) == int:
             return var
         else: optionB = var
-        '''
-        if optionB['size_of_components']==True:
-            temp = []
-            try:
-                if U_GB == None:
-                    for g in nx.connected_component_subgraphs(GB):
-                        temp.append(g.number_of_nodes())
-                else:
-                    for g in nx.connected_component_subgraphs(U_GB):
-                        temp.append(g.number_of_nodes())
-            except: return 1422
 
-            optionB['size_of_components']=[temp]
-        if optionB['giant_component_size']==True:
-            try:
-                if U_GB == None:
-                    optionB['giant_component_size']=[(nx.connected_component_subgraphs(GB)[0]).number_of_nodes()]
-                else: optionB['giant_component_size']=[(nx.connected_component_subgraphs(U_GB)[0]).number_of_nodes()]
-            except: return 1423
-
-        if optionB['avg_size_of_components']==True:
-            if U_GB == None:
-                optionB['avg_size_of_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(GB)))]
-            else: optionB['avg_size_of_components']=[(GB.number_of_nodes()/len(nx.connected_component_subgraphs(U_GB)))]
-        if optionB['isolated_nodes']==True:
-            optionB['isolated_nodes']=[nx.isolates(GB)]
-        if handling_variables['remove_isolates']==True or basicB['isolated_nodes_removed']==True:
-            basicB['isolated_nodes_removed']=[[]] #count the number of isolated nodes removed in the handle isolates function each step
-        if handling_variables['remove_isolates']== True or optionB['no_of_isolated_nodes_removed']==True:
-            optionB['no_of_isolated_nodes_removed']=[0]
-        if handling_variables['remove_subgraphs']== True or optionB['subnodes']==True or optionB['no_of_subnodes']==True:
-            optionB['subnodes']=[[]] #nodes removed as part of isolated graphs
-            optionB['no_of_subnodes']=[0] #count of nodes removed as part of subgraphs
-
-        if optionB['source_nodes']==True and source_nodes_B != None:
-            temp = []
-            for val in source_nodes_B: temp.append(val)
-            optionB['source_nodes']=[temp]
-        else: optionB['source_nodes']=False
-        if optionB['failed_no_con_to_a_source']==True:
-            optionB['failed_no_con_to_a_source']=[[]]
-        else: optionB['failed_no_con_to_a_source']=False
-
-        if optionB['density']==True:optionB['density']=[nx.density(GB)]
-
-        temp = []
-        if optionB['avg_path_length']==True:
-            temp = average_path_length(GB)
-            optionB['avg_path_length']=sum(temp)/len(temp)
-        if optionB['avg_path_length_of_components']==True or optionB['avg_path_length_of_giant_component']==True:
-            if temp == []:
-                temp = average_path_length(GB)
-            if optionB['avg_path_length_of_components']==True:
-                optionB['avg_path_length_of_components']=[temp]
-            if optionB['avg_path_length_of_giant_component']==True:
-                optionB['avg_path_length_of_giant_component']=[temp[0]]
-        if optionB['avg_geo_path_length']==True or optionB['avg_geo_path_length_of_components']==True or optionB['avg_geo_path_length_of_giant_component']==True:
-            #need to check that the edges have an attribute 'length'
-            for edge in GB.edges(data=True):
-                for edge in GB.edges(data=True):
-                    if len(edge[2].keys()) > 0:
-                        for key in edge[2].keys():
-                            if key == str(length):
-                                temp = []
-                                temp = average_path_length(GB,length)
-                                if optionB['avg_geo_path_length']==True:
-
-                                    optionB['avg_geo_path_length']=[sum(temp)/len(temp)]
-                                if optionB['avg_geo_path_length_of_components']==True:
-                                    optionB['avg_geo_path_length_of_components']=[temp]
-                                if optionB['avg_geo_path_length_of_giant_component']==True:
-                                    optionB['avg_geo_path_length_of_giant_component']=[temp[0]]
-                                break
-
-                    if optionB['avg_geo_path_length']==True:optionB['avg_geo_path_length']=[None]
-                    if optionB['avg_geo_path_length_of_components']==True:optionB['avg_geo_path_length_of_components']=[None]
-                    if optionB['avg_geo_path_length_of_giant_component']==True:optionB['avg_geo_path_length_of_giant_component']=[None]
-                    break
-                break
-
-        if optionB['avg_degree']==True:
-             temp=0
-             for node in GB:
-                 temp+=GB.degree(node)
-             optionB['avg_degree']=[temp/GB.number_of_nodes()]
-
-        if optionB['density']==True:optionA['density']=[nx.density(GB)]
-
-        if optionB['maximum_betweenness_centrality']==True or optionB['avg_betweenness_centrality']==True:
-            temp = nx.betweenness_centrality(GB)
-            if optionB['maximum_betweenness_centrality']<>False:
-                optionB['maximum_betweenness_centrality']=[max(temp.values())]
-            if optionB['avg_betweenness_centrality']<>False:
-                avg=0.0
-                for val in temp.values():
-                    avg+=val
-                optionB['avg_betweenness_centrality']=[avg/len(temp)]
-            if store_n_e_atts == True:
-                for key in temp: GB.node[key]['betweenness_centrality'] = temp[key]
-        if optionB['assortativity_coefficient']==True:
-            optionB['assortativity_coefficient']=[nx.degree_assortativity_coefficient(GB)]
-        if optionB['clustering_coefficient']==True:
-            optionB['clustering_coefficient']=[nx.average_clustering(GB)]
-            temp = nx.clustering(GB)
-            if store_n_e_atts == True:
-                for key in temp: GB.node[key]['betweenness_centrality'] = temp[key]
-        if optionB['transitivity']==True:
-            optionB['transitivity']=[nx.transitivity(GB)]
-        if optionB['square_clustering']==True:
-            temp = nx.square_clustering(GB)
-            avg=0.0
-            for val in temp.values():
-                avg+=val
-            optionB['square_clustering']=[avg/len(temp)]
-            if store_n_e_atts == True:
-                for key in temp: GB.node[key]['square_clustering'] = temp[key]
-        if optionB['avg_neighbor_degree']==True:
-            temp = nx.average_neighbor_degree(GB)
-            avg=0.0
-            for val in temp.values():
-                avg+=val
-            optionB['avg_neighbor_degree']=[avg/len(temp)]
-            if store_n_e_atts == True:
-                for key in temp: GB.node[key]['avg_neighbor_degree'] = temp[key]
-        if optionB['avg_degree_connectivity']==True:
-            temp = nx.average_degree_connectivity(GB)
-            optionB['avg_degree_connectivity']=[temp.values()]
-        if optionB['avg_degree_centrality']==True:
-            temp = nx.degree_centrality(GB)
-            avg=0.0
-            for val in temp.values():
-                avg+=val
-            optionB['avg_degree_centrality']=[avg/len(temp)]
-            if store_n_e_atts == True:
-                for key in temp: GB.node[key]['avg_degree_centrality'] = temp[key]
-        if optionB['avg_closeness_centrality']==True:
-            temp = nx.closeness_centrality(GB)
-            avg=0.0
-            for val in temp.values():
-                avg+=val
-            optionB['avg_closeness_centrality']=[avg/len(temp)]
-            if store_n_e_atts == True:
-                for key in temp: GB.node[key]['avg_closeness_centrality'] = temp[key]
-        if optionB['diameter']==True:
-            optionB['diameter']=[nx.diameter(GB)]
-        '''
     #----------------specific metrics for dependency failures------------------
     if failure['dependency']==True or failure['interdependency']== True:
         if failure['dependency']==True:
@@ -1674,8 +1368,9 @@ def metric_calcs(G, U_G, metric_list, handling_variables, source_nodes_A, length
     Function which calculates the optional metrics for either network.
     '''
     #tools.write_to_log_file(logfilepath, 'In metric calcs.')
-
+    print('in metric calcs')
     connected_component_subgraphs = nx.connected_component_subgraphs(G)
+    number_of_components =  nx.number_connected_components(G)
 
     if metric_list['size_of_components']==True:
         temp = []
@@ -1693,14 +1388,20 @@ def metric_calcs(G, U_G, metric_list, handling_variables, source_nodes_A, length
     tools.write_to_log_file(logfilepath, 'Calculated size of components.')
     if metric_list['giant_component_size']==True:
             if U_G == None:
-                metric_list['giant_component_size']=[nx.number_of_nodes(nx.connected_component_subgraphs(G)[0])]
-            else: metric_list['giant_component_size']=[nx.number_of_nodes(nx.connected_component_subgraphs(U_G)[0])]
+                if number_of_components != 1:
+                    metric_list['giant_component_size']=[nx.number_of_nodes(nx.connected_component_subgraphs(G)[0])]
+                else:
+                    metric_list['giant_component_size']=[G.number_of_nodes()]
+            else:
+                metric_list['giant_component_size']=[nx.number_of_nodes(nx.connected_component_subgraphs(U_G)[0])]
+
     tools.write_to_log_file(logfilepath, 'Got giant component size.')
     if metric_list['avg_size_of_components']==True:
             if U_G == None:
-                metric_list['avg_size_of_components']=[(nx.number_of_nodes(G)/len(nx.connected_component_subgraphs(G)))]
-            else: metric_list['avg_size_of_components']=[(nx.number_of_nodes(G)/len(nx.connected_component_subgraphs(U_G)))]
+                metric_list['avg_size_of_components']=[(nx.number_of_nodes(G)/number_of_components)]
+            else: metric_list['avg_size_of_components']=[(nx.number_of_nodes(G)/number_of_components)]
     tools.write_to_log_file(logfilepath, 'Got average size of components.')
+
     if metric_list['isolated_nodes'] == True:
         metric_list['isolated_nodes'] = [nx.isolates(G)]
     tools.write_to_log_file(logfilepath, 'Got isolated nodes.')
@@ -1870,7 +1571,7 @@ def metric_calcs(G, U_G, metric_list, handling_variables, source_nodes_A, length
             metric_list['diameter']=[nx.diameter(G)]
         except: return 1421
     tools.write_to_log_file(logfilepath, 'Finished doing initial metric calcs.')
-
+    print('completed metric calcs')
     var = metric_list
     return var
 
@@ -1898,5 +1599,6 @@ def default_parameters(fileName, failure, basicA=None, optionA=None, basicB=None
     return parameters
 
 def outputresults(graphparameters, parameters, metrics, logfilepath=None,multiterations=False):
+    print('reached here')
     values,error = outputs.outputresults(graphparameters, parameters, metrics, logfilepath, multiterations)
     return values

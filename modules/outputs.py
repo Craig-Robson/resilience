@@ -15,7 +15,7 @@ import error_classes, tools
 import ogr,sys
 
 def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
-    '''Writes a copy of the network to the database along with any attributes 
+    '''Writes a copy of the network to the database along with any attributes
     which have been calculated. Called at end of step function.
     Inputs: graphparamerers and parameters
     Returns:   True/False '''
@@ -26,16 +26,16 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
         import nx_pgnet
     except:
         return 5201
-    
+
     conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     conn = ogr.Open(conn)
     if conn == None:
         return 5202
-    
+
     if save_a:
         print('Writing out network(s)')
         #write network A
-        if i == -99: return        
+        if i == -99: return
         GAWrite = GtempA.copy()
         net_name = net_name_a+'_'+str(i)
         if spatial_a:
@@ -51,11 +51,11 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
                 node_equality_key='id_')
             except:
                 return 5207
-            
 
-    if save_b:    
+
+    if save_b:
         #write network B
-        if i == -99: return  
+        if i == -99: return
         GBWrite = GtempB.copy()
         if spatial_b:
             try:
@@ -71,13 +71,13 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
                    overwrite=True,node_equality_key='id_')
             except:
                 return 5208
-                
+
         if failure['dependency']: #dependency edge table
             try:
                 table_name_old = 'inter_edges_at_t'
                 table_name_new = 'inter_edges_at_t_%s'%(i)
                 conn.ExecuteSQL("DROP TABLE IF EXISTS %s" %(table_name_old))
-                conn.ExecuteSQL("CREATE TABLE %s (id INT PRIMARY KEY, netA_node INT, netB_node INT)" %(table_name_old)) 
+                conn.ExecuteSQL("CREATE TABLE %s (id INT PRIMARY KEY, netA_node INT, netB_node INT)" %(table_name_old))
                 k = 0
                 for edge in a_to_b_edges:
                      conn.ExecuteSQL("INSERT INTO inter_edges_at_t VALUES (%s,%s,%s)" %(k,edge[0],edge[1]))
@@ -88,11 +88,11 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
                 rename_db_table(conn,table_name_old,table_name_new)
             except:
                 return 5211
-                
+
         elif failure['interdependency']:
             #write interdependency
             pass
-    
+
     return True
 
 def write_results_table(metrics,i,failure,db_parameters,k):
@@ -108,31 +108,31 @@ def write_results_table(metrics,i,failure,db_parameters,k):
 
     conn = ogr.Open(conn)
     if conn == None:
-        return 
-        
-    if i == 0: 
+        return
+
+    if i == 0:
         var = create_db_res_table(conn,defaultA,optionA,dependency,cascading,'A')
         if type(var) == int:
             return var
-        
+
         if not failure['stand_alone']:
             var = create_db_res_table(conn,defaultB,optionB,dependency,cascading,'B')
             if type(var) == int:
                 return var+3 #this is so we know if network a or b
-                
+
     if i != -100:
         #-----------------write basic metrics out------------------------------
         #can't figure out how to have dynamic name variable and allow text to be written out to table as well
         try:
-            conn.ExecuteSQL("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s)""" 
+            conn.ExecuteSQL("""INSERT INTO network_a VALUES (%s,%s,%s,%s,%s)"""
                     %(i,basicA['no_of_nodes'][i],basicA['no_of_edges'][i],
                       basicA['no_of_components'][i],basicA['no_of_isolated_nodes'][i]))
-            if basicA['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_removed='{}' WHERE time_step=%s""" %(i))        
-            else:            
+            if basicA['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_removed='{}' WHERE time_step=%s""" %(i))
+            else:
                 if len(basicA['nodes_removed'][i])==1:conn.ExecuteSQL("""UPDATE network_a SET nodes_removed=ARRAY %s WHERE time_step=%s""" %(str(basicA['nodes_removed'][i]),i))
                 else:conn.ExecuteSQL("""UPDATE network_a SET nodes_removed=ARRAY%s WHERE time_step=%s""" %(basicA['nodes_removed'][i],i))
-            if basicA['nodes_selected_to_fail'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail='{}' WHERE time_step=%s""" %(i))        
-            else:            
+            if basicA['nodes_selected_to_fail'][i]==[]: conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail='{}' WHERE time_step=%s""" %(i))
+            else:
                 if len(basicA['nodes_selected_to_fail'][i])==1:conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail=ARRAY %s WHERE time_step=%s""" %(str(basicA['nodes_selected_to_fail'][i]),i))
                 else:conn.ExecuteSQL("""UPDATE network_a SET nodes_selected_to_fail=%s WHERE time_step=%s""" %(basicA['nodes_selected_to_fail'][i],i))
         except:
@@ -143,7 +143,7 @@ def write_results_table(metrics,i,failure,db_parameters,k):
                 if optionA[keys]!=False and optionA[keys]!=True:
                     try:
                         if keys=='subnodes'or keys=='isolated_nodes_removed' or keys=='isolated_nodes' or keys=='size_of_components' or keys=='avg_path_length_of_components' or keys=='avg_geo_path_length_of_components' or keys=='avg_degree_connectivity':
-                            if optionA[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))        
+                            if optionA[keys][i]==[]:conn.ExecuteSQL("""UPDATE network_a SET %s='{}' WHERE time_step=%s""" %(keys,i))
                             else:
                                 if len(optionA[keys][i])==1:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,str(optionA[keys][i]),i))
                                 else:conn.ExecuteSQL("""UPDATE network_a SET %s=ARRAY %s WHERE time_step=%s""" %(keys,optionA[keys][i],i))
@@ -169,11 +169,11 @@ def write_results_table(metrics,i,failure,db_parameters,k):
             #if dependency or interdependency
             #---------------write basic metrics out----------------------------
             try:
-                conn.ExecuteSQL("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s)""" 
+                conn.ExecuteSQL("""INSERT INTO network_b VALUES (%s,%s,%s,%s,%s)"""
                     %(i,basicB['no_of_nodes'][i],basicB['no_of_edges'][i],
                       basicB['no_of_components'][i],basicB['no_of_isolated_nodes'][i]))
                 try:
-                    if basicB['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed='{}' WHERE time_step=%s""" %(i))        
+                    if basicB['nodes_removed'][i]==[]: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed='{}' WHERE time_step=%s""" %(i))
                     else: conn.ExecuteSQL("""UPDATE network_b SET nodes_removed= ARRAY %s WHERE time_step=%s""" %(basicB['nodes_removed'][i],i))
                 except:
                     print("Error in basicB 'nodes_removed' when trying to write out results.")
@@ -203,10 +203,10 @@ def write_results_table(metrics,i,failure,db_parameters,k):
                                 print("Error occured when writing values to database for network 'b' where the key is '%s'" %(keys))
                 except:
                     return 5258
-                    
+
             # write out dependency metrics
             for keys in list(dependency.keys()):
-                
+
                 if dependency[keys]!=False:
                     try:
                         if keys=='no_of_nodes_removed_from_A':
@@ -220,12 +220,12 @@ def write_results_table(metrics,i,failure,db_parameters,k):
                         elif keys=='nodes_removed_from_B':
                             if dependency[keys][i]==[]:
                                 conn.ExecuteSQL("""UPDATE network_b SET %s='{}' WHERE time_step=%s""" %(keys,i))
-                            else:conn.ExecuteSQL("""UPDATE network_b SET %s= ARRAY %s WHERE time_step=%s""" %(keys,dependency[keys][i],i))          
+                            else:conn.ExecuteSQL("""UPDATE network_b SET %s= ARRAY %s WHERE time_step=%s""" %(keys,dependency[keys][i],i))
                     except:
                         return 5259
             if failure['interdependency']==True:
-                pass                
-            
+                pass
+
     if k==-99:
         #if last iteration rename tables to something more specific
         var = rename_db_table(conn,defaultA,table_name_new='results_'+net_name_a)
@@ -248,7 +248,7 @@ def create_db_res_table(conn,table_name,option,dependency,cascading,net):
                     "nodes_selected_to_fail INT ARRAY, isolated_nodes_removed INT ARRAY)" %(table_name))
     except:
         return 5241
-    
+
     try:
         for keys in option:
             if option[keys]==False: pass
@@ -256,7 +256,7 @@ def create_db_res_table(conn,table_name,option,dependency,cascading,net):
             else:conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
     except:
         return 5242
-                
+
     try:
         for keys in dependency:
             #this will write out no matter A or B - need to sort so it does not do this
@@ -270,12 +270,12 @@ def create_db_res_table(conn,table_name,option,dependency,cascading,net):
                         conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
     except:
         return 5243
-        
+
     if cascading != None:
         for keys in cascading:
             if cascading[keys]==False: pass
             else:conn.ExecuteSQL("ALTER TABLE %s ADD COLUMN %s varchar" %(table_name,keys))
-                
+
     return True
 
 def rename_db_table(conn,table_name_old,table_name_new):
@@ -319,9 +319,9 @@ def outputresults(graphparameters, parameters,metrics,logfilepath=None,multiiter
     #pack the metric values together again
     var = basicA, basicB, optionA, optionB, dependency,cascading
     return var
-    
+
 def average_txtresults(graphparameters, parameters,error):
-    '''Reads a txt file with results in and produces an average set and writes 
+    '''Reads a txt file with results in and produces an average set and writes
     back to the same text file. Appends the averages to the end of the file.'''
     #unpack the graphparameters and parameters
     metrics, STAND_ALONE, DEPENDENCY, INTERDEPENDENCY, SINGLE, SEQUENTIAL, CASCADING, RANDOM, DEGREE, BETWEENNESS, REMOVE_SUBGRAPHS, REMOVE_ISOLATES, NO_ISOLATES, fileName,a_to_b_edges = parameters
@@ -334,7 +334,7 @@ def average_txtresults(graphparameters, parameters,error):
                   'isolated nodes count','size of each component',
                   'number of ndoes in giant component',
                   'average size of components','isolated nodes',
-                  'numer of isolates removed','subnodes','number of subnodes',     
+                  'numer of isolates removed','subnodes','number of subnodes',
                   'average path length for network','average path length per component',
                   'average path length in giant', 'average path length for network geo',
                   'average degree','inter removed count']
@@ -378,7 +378,7 @@ def average_txtresults(graphparameters, parameters,error):
                     b = b.replace('[','');b=b.replace(']','')
                     if line_index[i] == 'nodes removed':
                         b = b.split(';')
-                    else:                        
+                    else:
                         b = b.split(',')
                     #loop through the items, adding them to the 'temp' list
                     temp = []
@@ -406,25 +406,25 @@ def average_txtresults(graphparameters, parameters,error):
     #close the resuls file
     fread.close()
     #open the file for writing the results to
-    fwrite = open(fileName, 'a')    
+    fwrite = open(fileName, 'a')
     #loop through the teo network metric lists
-    y = 0; r = 0    
+    y = 0; r = 0
     while r < 2:
         #get the metrics for the respective network
         if r == 0:
-            temp_metrics = temp_metrics_A        
-        elif r == 1: 
+            temp_metrics = temp_metrics_A
+        elif r == 1:
             temp_metrics = temp_metrics_B
-        else: 
+        else:
             raise error_classes.OutputError('Error. Major error in average results.')
-        
+
         #go through each of the metrics in the list
         metriclist = []
         while y < len(temp_metrics):
             temp_metric = temp_metrics[y]
             #find the length of the longest list for the metric
             if len(temp_metric) != 0:
-                max_len = 0                
+                max_len = 0
                 for items in temp_metric:
                     if len(items) > max_len:
                         max_len = len(items)
@@ -440,7 +440,7 @@ def average_txtresults(graphparameters, parameters,error):
                     while k < num_of_iterations:
                         try:
                             mean += float(temp_metric[k][p])
-                        except: 
+                        except:
                             #if can't get a value as for the specific simualtion finished quicker then one of the others
                             pass
                         k += 1
@@ -453,10 +453,10 @@ def average_txtresults(graphparameters, parameters,error):
                 #if the metric was not used, thus append False instead
                 metriclist.append(False)
             y+=1
-            
+
         p = 0
         #write which network this set of results are for
-        if r == 0: 
+        if r == 0:
             fwrite.write('NETWORK A\n')
         elif r ==1:
             fwrite.write('NETWORK B\n')
@@ -467,20 +467,20 @@ def average_txtresults(graphparameters, parameters,error):
             else:
                 fwrite.write(str(line_index[p]) + ',' + str(metriclist[p]) + '\n')
             p += 1
-        
+
         if r == 0: metriclist_A = metriclist
         elif r == 1: metriclist_B = metriclist
         #if only single analysis has been perfomed, change r so loop stops
         if dependency == False: r = 100
         r += 1
-        
+
     #close the connection to the text file
     fwrite.close()
     #create blnk lists for A to staore the average results
     basic_metrics_A = [];option_metrics_A = []
     #create blank lists for network B if needed
     if dependency == True: basic_metrics_B = [];option_metrics_B = []
-    #iterate through the possible mettrics used    
+    #iterate through the possible mettrics used
     i = 1
     while i < len(line_index):
         #while i is less than six, these are regarded as the basic metrics
@@ -492,53 +492,53 @@ def average_txtresults(graphparameters, parameters,error):
             option_metrics_A.append(metriclist_A[i])
             if dependency == True: option_metrics_B.append(metriclist_B[i])
         i += 1
-  
+
     return basic_metrics_A,basic_metrics_B,option_metrics_A,option_metrics_B,error
-    
+
 def results(basic_metrics_A, basic_metrics_B,STAND_ALONE): #print out and write out the results
     '''Prints some results to the console.
     Inputs: basic metrics set for network A and B
     Returns: Nothing '''
     nodes_removed_A,node_count_removed_A,count_nodes_left_A,number_of_edges_A,number_of_components_A = basic_metrics_A
     nodes_removed_B,node_count_removed_B,count_nodes_left_B,number_of_edges_B,number_of_components_B = basic_metrics_B
-    print('NETWORK A')    
+    print('NETWORK A')
     print('nodes_removed_A: ', nodes_removed_A)
     print('number_of_edges_A: ', number_of_edges_A)
     print('node_count_removed_A: ', node_count_removed_A)
     print('count_nodes_left_A: ', count_nodes_left_A)
     print('number_of_components_A: ', number_of_components_A)
-    if STAND_ALONE == False:  
-        print('NETWORK B')    
+    if STAND_ALONE == False:
+        print('NETWORK B')
         print('nodes_removed_B: ', nodes_removed_B)
-        print('number_of_edges_B: ', number_of_edges_B)    
+        print('number_of_edges_B: ', number_of_edges_B)
         print('node_count_removed_B: ', node_count_removed_B)
         print('count_nodes_left_B: ', count_nodes_left_B)
-        print('number_of_components_B: ', number_of_components_B) 
+        print('number_of_components_B: ', number_of_components_B)
 
 def write_text_file(outputfile,CASCADING,basic,option):
     '''Writes the metrics to the text file.
     Inputs: file operand, CASCADING variable, basic_metrics set and option_metrics set
     Returns: Nothing'''
     #unpack the variables
-    
+
     #write the basic metrics to the text file
     try:
         outputfile.write('\nnodes removed,' + str(tools.replace_all(str(basic['nodes_removed']), {',':';','];':'],'})))
         outputfile.write('\nnumber of nodes removed,' + str(basic['no_of_nodes_removed']))
-        outputfile.write('\nnumber of nodes left,' + str(basic['no_of_nodes']))   
+        outputfile.write('\nnumber of nodes left,' + str(basic['no_of_nodes']))
         outputfile.write('\nnumber of edges,' + str(basic['no_of_edges']))
         outputfile.write('\nnumber of components,' + str(basic['no_of_components']))
         outputfile.write('\nnumber of isolates,' + str(str(basic['no_of_isolated_nodes'])))
         outputfile.write('\nisolated nodes removed,' + str(tools.replace_all(str(basic['isolated_nodes_removed']), {',':';','];':'],'})))
     except:
         return 5031
-    
-    #need to do below as not needed for basic B    
-    try:    
+
+    #need to do below as not needed for basic B
+    try:
         if basic['nodes_selected_to_fail']!=False:outputfile.write('\nnodes selected to fail,' + str(basic['nodes_selected_to_fail']))
     except:
         return 5032
-        
+
     #write the optional metrics to the rext file - if not set as False
     try:
         if option['size_of_components'] != False:
@@ -554,7 +554,7 @@ def write_text_file(outputfile,CASCADING,basic,option):
         if option['subnodes'] != False:
             outputfile.write('\nsubgraph nodes,' + str(tools.replace_all(str(tools.replace_all(str(option['subnodes']) , {',':';',']];':']],'})),{'[];':'[],'})))
         if option['no_of_subnodes'] != False:
-            outputfile.write('\nnumber of subnodes,' + str(option['no_of_subnodes']))  
+            outputfile.write('\nnumber of subnodes,' + str(option['no_of_subnodes']))
         if option['source_nodes'] != False:
             outputfile.write('\nsource nodes,' + str(option['source_nodes']))
         if option['failed_no_con_to_a_source'] != False:
@@ -599,48 +599,48 @@ def write_text_file(outputfile,CASCADING,basic,option):
             outputfile.write('\ndiameter,' + str(option['diameter']))
     except:
         return 5033
-        
+
     return True
-    
-def txtout(outputfile,graphparameters, parameters,metrics):        
+
+def txtout(outputfile,graphparameters, parameters,metrics):
     '''Writes the results to a specified text file.
     Inputs: the file operand, the graphparameters (metrics etc) and the parameters
     Returns: Nothing'''
     #unpack the variables
-    failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters    
-    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B = graphparameters 
+    failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length=parameters
+    networks,i,node_list,to_b_nodes,from_a_nodes,source_nodes_A,source_nodes_B = graphparameters
     GA, GB, GtempA, GtempB = networks
     basicA,basicB,optionA,optionB,dependency,cascading=metrics
 
     #write the parameters for the analysis out
     try:
-        outputfile.write('\nThe analysis parameters were:')    
+        outputfile.write('\nThe analysis parameters were:')
         if failure['single'] == True: outputfile.write('SINGLE = True, ')
         elif failure['sequential'] == True: outputfile.write('Sequential = True, ')
-        elif failure['cascading'] == True: outputfile.write('Cascading = True, ') 
+        elif failure['cascading'] == True: outputfile.write('Cascading = True, ')
         else: outputfile.write('Error!')
-        
+
         if failure['random'] == True: outputfile.write('RANDOM = True')
         elif failure['degree'] == True: outputfile.write('DEGREE = True')
         elif failure['betweenness'] == True: outputfile.write('BETWEENNESS = True')
-        else: outputfile.write('Error!')    
+        else: outputfile.write('Error!')
         #write the options used out
         if handling_variables['remove_subgraphs'] == True: outputfile.write(', REMOVE_SUBGRAPHS = True')
         if handling_variables['remove_isolates'] == True: outputfile.write(', REMOVE_ISOLATES = True')
         if handling_variables['no_isolates'] == True: outputfile.write(', NO_ISOLATES = True')
     except:
         return 5010
-        
+
     #write out the first few lines for network A
     outputfile.write('\nNETWORK A')
     outputfile.write('\nTook this manny steps: '+ str(len(basicA['no_of_nodes'])-1))
     #use the function to write the metric results out for the network A
     print("Writing results to file (%s)" %outputfile)
-    var = write_text_file(outputfile,failure['cascading'],basicA,optionA)     
+    var = write_text_file(outputfile,failure['cascading'],basicA,optionA)
 
     if type(var) == int:
-        return var        
-        
+        return var
+
     #write the results for the metrics for network B using the function
     if failure['dependency'] == True or failure['interdependency'] == True:
         try:
@@ -653,5 +653,5 @@ def txtout(outputfile,graphparameters, parameters,metrics):
             outputfile.write('\nnodes removed due to dependency failure,' + str(tools.replace_all(str(dependency['nodes_removed_from_B']), {',':';','];':'],'})))
         except:
             return 5011
-    
+    print('Completed writing results out to file.')
     return True

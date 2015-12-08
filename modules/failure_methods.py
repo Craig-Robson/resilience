@@ -17,7 +17,7 @@ import error_classes,tools,network_handling
 
 '''sequential failures'''
 def sequential_degree(G,INTERDEPENDENCY): #formally cascading
-    '''Code to perform the sequential analysis where the node to be removed is 
+    '''Code to perform the sequential analysis where the node to be removed is
     selected via that with the highest degree.
     Input: a network, INTERDEPENDENCY variable
     Return: a network, the node removed '''
@@ -26,31 +26,31 @@ def sequential_degree(G,INTERDEPENDENCY): #formally cascading
     if type(var) == int:
         return 3000
     else: degree, node = var
-    
+
     #if the returned node is -99999, then there is an error
     if node == -99999:
         #check to see if the number of edges in the network is greater than 0
-        if G.number_of_edges() > 0: 
+        if G.number_of_edges() > 0:
             raise error_classes.GeneralError('There are %s edge on the network. An unknown error has occred.' %(G.number_of_edges()))
             return 3001
-            
-        else:  
+
+        else:
             raise error_classes.CalculationError('There are no edges in the network, thus no values could be computed.')
             return 3002
-    else: 
-        #remove the edges connected to the node - networkx does this automatically 
+    else:
+        #remove the edges connected to the node - networkx does this automatically
         #remove the node from the network
         try:
             G.remove_node(node) #remove the node
         except:
             return 3003
-        
+
     #return the editied network and the node removed
     var = G, node
     return var
 
-def sequential_betweenness(G,INTERDEPENDENCY): 
-    '''Sequential analysis where the node to be removed on each iteration is 
+def sequential_betweenness(G,INTERDEPENDENCY):
+    '''Sequential analysis where the node to be removed on each iteration is
     that with the highest betweenness centrality value.
     Input: a network, INTERDEPENDENCY variable
     Return: a network, the node removed'''
@@ -59,7 +59,7 @@ def sequential_betweenness(G,INTERDEPENDENCY):
     if type(var) == int:
         return 3010
     else: betweenness_value, node = var
-    
+
     #if the node has the value of an error
     if node == -99999:
         raise error_classes.GeneralError('Error. An error occured when calcualting the node to remove.')
@@ -67,15 +67,92 @@ def sequential_betweenness(G,INTERDEPENDENCY):
     else:
         #remove all edges which feature the node and then the node
         try:
-            G.remove_node(node) 
+            G.remove_node(node)
         except:
             return 3012
     #return the eddited network and the node remvoed
     var = G, node
     return var
-    
+
+def create_dict_of_removals(G,failures_to_occur,node_to_fail_list):
+    '''
+    Creates a dict of nodes which are the x highest with the value left in the network. It is hard coded that this is betweenness.
+    '''
+    print('Re-calculating list of nodes to remove')
+    blist = nx.betweenness_centrality(G)
+    for key in blist.keys():
+        if len(node_to_fail_list) > 0:
+            min_val = min(node_to_fail_list.values())
+
+        if len(node_to_fail_list) < failures_to_occur:
+            node_to_fail_list[key] = blist[key]
+        elif blist[key] > min_val:
+
+            #remove min val
+            for key1 in blist.keys():
+                if blist[key1] == min_val:
+                    del node_to_fail_list[key1]
+                    break
+            #add new val
+            node_to_fail_list[key] = blist[key]
+
+    return node_to_fail_list
+
+def sequential_betweenness_by_list(G,INTERDEPENDENCY,failures_to_occur,node_to_fail_list):
+    '''
+    Allows a list of nodes to be created and used to remove the nodes.
+    '''
+    #if fewer nodes in the network than wanted for list reduce request
+    if G.number_of_nodes() < failures_to_occur:
+        failures_to_occur = G.number_of_nodes()
+
+    #if list has no nodes in, build list
+    if len(node_to_fail_list) == 0 or node_to_fail_list == {}:
+        node_to_fail_list = create_dict_of_removals(G,failures_to_occur,node_to_fail_list)
+    node = -99999
+
+    if len(node_to_fail_list) != 0:
+        use_next = True
+        while use_next == True:
+
+            # if the list becomes zero while trying to remove a node
+            if len(node_to_fail_list) == 0:
+                node_to_fail_list = create_dict_of_removals(G,failures_to_occur,node_to_fail_list)
+            #get node with the max value and delete from the list
+            max_val = max(node_to_fail_list.values())
+            for key in node_to_fail_list.keys():
+                if node_to_fail_list[key] == max_val:
+                    node = key
+                    break
+            if node == -99999:
+                print('Did not find node to remove')
+                exit()
+            del node_to_fail_list[key]
+            # check node still in network - it may have been removed eg. isolated
+            try:
+                G.node[node]
+                use_next = False
+            except:
+                use_next = True
+
+    #if the node has the value of an error
+    if node == -99999:
+
+        raise error_classes.GeneralError('Error. An error occured when calcualting the node to remove.')
+        return 3011
+    else:
+        #remove all edges and the node
+        try:
+            G.remove_node(node)
+        except:
+            return 3012
+
+    #return the eddited network and the node remvoed
+    var = G, node, node_to_fail_list
+    return var
+
 def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
-    '''Sequential anlysis method where the node to be removed is selcted 
+    '''Sequential anlysis method where the node to be removed is selcted
     randomly from those still in the network.
     Input: a network, NO_ISOLATES varaible, INTERDEPENDENCY variable
     Return: a network, the node removed'''
@@ -84,9 +161,9 @@ def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
     #if isolates are not to be removed as a selected node
     if NO_ISOLATES==True:
         #randomly select a node until one is found with a degree of one at least
-        while nx.degree(G, node) == 0: 
+        while nx.degree(G, node) == 0:
             node = random.choice(G.nodes())
-    
+
     #remove the edge assocaiated with the node and then the node
     try:
         G.remove_node(node)
@@ -97,20 +174,20 @@ def sequential_random(G, NO_ISOLATES, INTERDEPENDENCY):
     return var
 
 def sequential_flow(G, NO_ISOLATES, INTERDEPENDENCY):
-    '''Sequential anlysis method where the node to be removed is selcted 
+    '''Sequential anlysis method where the node to be removed is selcted
     via having the highest flow value.
     Input: a network, NO_ISOLATES varaible, INTERDEPENDENCY variable
     Return: a network, the node removed'''
-    
+
     flow_dict = {}
     for nd in G.nodes():
         flow_dict[nd]=G.node[nd]['flow']
-    
-    var = tools.max_val_random(flow_dict)  
+
+    var = tools.max_val_random(flow_dict)
     if type(var) == int:
         return 3030
     else: betweenness_value, node = var
-     
+
     #if the node has the value of an error
     if node == -99999:
         raise error_classes.GeneralError('Error. An error occured when calcualting the node to remove.')
@@ -118,13 +195,13 @@ def sequential_flow(G, NO_ISOLATES, INTERDEPENDENCY):
     else:
         #remove all edges which feature the node and then the node
         try:
-            G.remove_node(node) 
+            G.remove_node(node)
         except:
             return 3032
     #return the eddited network and the node removed
     var = G, node
     return var
-    
+
 def sequential_from_list(G,INTERDEPENDENCY,fail_list,i):
     '''
     '''
@@ -138,55 +215,55 @@ def sequential_from_list(G,INTERDEPENDENCY,fail_list,i):
         return 3041
     var = G, node
     return var
-    
+
 def cascading_failure(G, dlist, dead,k,subnodes_A, isolated_nodes_A, removed_nodes,INTERDEPENDENCY): #start node chosen at random  #take out all neighbors
     '''Sequential failure code where all the neighbours of the node(s) removed
-    on the previuos iteration are remvoed. This is intiated with a node 
+    on the previuos iteration are remvoed. This is intiated with a node
     selected at random.
     Input: a network, deadlist, dead, k, subnodes,isolated nodes, removed nodes, INTERDEPENDENCY variable
     Return: a network, deadlist removed nodes, node removed'''
-    #create empty container for nodes which have been removed  
+    #create empty container for nodes which have been removed
     deadlist = []
     nlist = []
     #this only needs to happen on the first iteration
     if k ==0:
         #append the list of 'dead' nodes to create the useable list - as deifned by the user
-        deadlist.append(dead) 
+        deadlist.append(dead)
     else:
         #deadlist is the dlist, created on previuos iteration, containing the vulnerable nodes
-        deadlist = dlist 
+        deadlist = dlist
     #loop through the list of nodes to remove
     try:
         i = 0
         while i < len(deadlist):
             node = deadlist[i]
             #to avoid errors, check if the node has been removed yet due to being in a subgraph or an isolated node
-            REMOVED = network_handling.check_node_removed(node, subnodes_A, isolated_nodes_A) 
+            REMOVED = network_handling.check_node_removed(node, subnodes_A, isolated_nodes_A)
             if type(REMOVED) == int:
                 return REMOVED
             #if the node has been removed from the network
-            
+
             if REMOVED == True:
                 #remove from deadlist as not needed anynmore and may cause errors if left in
                 deadlist.remove(deadlist[i])
                 #list is now shorter to subtract one so i stays the same and no values are missed
-                i -= 1 
+                i -= 1
             #if the node is still in the list
-            elif REMOVED == False: 
+            elif REMOVED == False:
                 #count the number of times the node appears in the removed nodes list
-                count = removed_nodes.count(node) 
-                if count > 0: 
+                count = removed_nodes.count(node)
+                if count > 0:
                     #remove from deadlist to avoid any errors later
-                    deadlist.remove(deadlist[i])    
+                    deadlist.remove(deadlist[i])
                     i -= 1
                 else:
                     #create a list of all neigbours to the node
                     try:
-                        neighbours_list = G.neighbors(node) 
+                        neighbours_list = G.neighbors(node)
                     except: return 3051
                     y = 0
                     while y<len(neighbours_list):
-                        fnode = neighbours_list[y] 
+                        fnode = neighbours_list[y]
                         nlist.append(fnode)
                         y += 1
                     #remove the edges and the node
@@ -212,7 +289,7 @@ def flow_cascading_failure(G,NO_ISOLATES, INTERDEPENDENCY,flow_key,cap_key):
     '''
     removed_edges = []
     removed_nodes = []
-    
+
     #check for keys in networks
     for edge in G.edges(data=True):
         try:
@@ -225,7 +302,7 @@ def flow_cascading_failure(G,NO_ISOLATES, INTERDEPENDENCY,flow_key,cap_key):
         except:
             print('Could not find %s attribute in an edge.' %cap_key)
             raise
-    
+
     for node in G.nodes(data=True):
         try:
             node[1][flow_key]
@@ -237,8 +314,8 @@ def flow_cascading_failure(G,NO_ISOLATES, INTERDEPENDENCY,flow_key,cap_key):
         except:
             print('Could not find %s attribute in a node.' %cap_key)
             raise
-    
-    #remove any edge where flow is greater than capacity        
+
+    #remove any edge where flow is greater than capacity
     for edge in G.edges(data=True):
         if edge[2][flow_key] > edge[2][cap_key]:
             removed_edges.append(edge)
@@ -246,13 +323,13 @@ def flow_cascading_failure(G,NO_ISOLATES, INTERDEPENDENCY,flow_key,cap_key):
     for node in G.nodes(data=True):
         if node[1][flow_key] > node[1][cap_key]:
             removed_nodes.append(node)
-    
+
     return G,removed_nodes,removed_edges
 
 
-'''single isolaterd failures'''    
+'''single isolaterd failures'''
 def single_random(G,node_list, INTERDEPENDENCY):
-    '''Analysis by removeing only one node for each iteration, where the nodes 
+    '''Analysis by removeing only one node for each iteration, where the nodes
     are selected at random.
     Input: network, list of nodes, INTERDEPENDENCY variable
     Return: network, node removed '''
@@ -260,9 +337,9 @@ def single_random(G,node_list, INTERDEPENDENCY):
     if len(node_list) < 1:
         raise error_classes.GraphError('Error. No nodes to choose from for the node to remove.')
         return 3060
-        
+
     #choose a node at random from the graph node list
-    node = random.choice(node_list) 
+    node = random.choice(node_list)
     #use Gtemp as need to reset G to its original state for the next iteration
     Gtemp = G
     try:
@@ -271,30 +348,30 @@ def single_random(G,node_list, INTERDEPENDENCY):
     #need to keep track of the nodes removed, hence a list
     node_list.remove(node)
     var = Gtemp,node
-    return var    
-    
+    return var
+
 '''Failure via shapefile'''
 def geo_failure(G,shp_file):
     '''
     Given a shapefile, identifies those nodes within the failure zone.
     '''
-    
+
     print('THIS NEEDS UPDATING')
     import shapefile
     coords = []
     try:
         sf = shapefile.Reader(shp_file)
     except: return 3070
-        
+
     shapes = sf.shapes()
     for shape in shapes:
         for p in  shape.points:
-            coords.append(p)    
-    polygon = coords  
-    #get list of node        
+            coords.append(p)
+    polygon = coords
+    #get list of node
     list_of_nodes = G.nodes()
     nodes_removed = []
-    
+
     #loop through list of nodes
     Gtemp = G
     for nde in list_of_nodes:
@@ -302,7 +379,7 @@ def geo_failure(G,shp_file):
         inside = point_in_poly(nde,polygon)
         if type(inside) == int:
             return inside
-        
+
         #if inside polygon
         if inside == True:
             #remove node and edges from network
@@ -312,12 +389,12 @@ def geo_failure(G,shp_file):
             try:
                 Gtemp.remove_node(nde)
             except: return 3072
-            
+
             nodes_removed.append(nde)
-            
+
     var = Gtemp, nodes_removed
     return var
-    
+
 def point_in_poly(coord,poly):
     '''Point in polygon.'''
     x,y = coord
