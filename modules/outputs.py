@@ -12,7 +12,7 @@ previuos version - outputs
 
 #custom modules
 import error_classes, tools
-import ogr,sys
+import sys
 
 def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
     '''Writes a copy of the network to the database along with any attributes
@@ -26,6 +26,11 @@ def write_to_db(networks,a_to_b_edges,failure,db_parameters,i):
         import nx_pgnet
     except:
         return 5201
+
+    try:
+        import ogr
+    except:
+        return 5200
 
     conn, net_name_a, net_name_b, save_a, save_b, srid_a, srid_b, spatial_a, spatial_b = db_parameters
     conn = ogr.Open(conn)

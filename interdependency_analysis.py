@@ -70,8 +70,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
         return 1102
     '''
     print('in main function')
-    print(GA.number_of_nodes())
-    print(GA.number_of_edges())
+
     try:
         var = tools.write_to_log_file(logfilepath, 'In function after importing modules')
     except:
@@ -85,7 +84,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
         var = metrics_initial(GA,GB,metrics,failure,handling_variables,store_n_e_atts,length,a_to_b_edges,source_nodes_A,source_nodes_B, logfilepath)
     except:
         return 1106
-    print('got this far')
+
     if type(var) == int:
         tools.write_to_log_file(logfilepath, 'Error code %s returned. Failure in metrics_initial function.')
         return var
@@ -234,7 +233,6 @@ def step(graphparameters, parameters, metrics, iterate, logfilepath,when_to_calc
     Inputs: graphparameters, parameters iterate
     Returns: graphparameters, iterate
     '''
-    print('Running step')
     #----------------unpack all the data containers----------------------------
     failure,handling_variables,fileName,a_to_b_edges,write_step_to_db,write_results_table,db_parameters,store_n_e_atts,length = parameters
     basicA,basicB,optionA,optionB,dependency,cascading = metrics
@@ -756,20 +754,13 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                 except: return 2027
 
             #when_to_calc_metrics = 5 #here for testing
-
-            print('i:',i)
             if when_to_calc_metrics != True: # if it has been set as number
-                print('Checking to calc metrics or not:', when_to_calc_metrics)
                 calc_metrics = False
                 calc_value = 0
                 while calc_metrics == False:
-                    print('in check loop')
-                    print(('i:',i,' - calc value:',calc_value))
                     if i == calc_value:
                         calc_metrics = True
-                        print('Record values')
                     elif calc_value > i:
-                        print('Skipping')
                         break
                     else:
                         calc_value = calc_value + when_to_calc_metrics
@@ -1194,6 +1185,7 @@ def analysis_B(parameters,iterate,Gtemp,i,to_a_nodes,from_b_nodes,node_list,basi
                             tools.write_to_log_file(logfilepath,temp = nx.degree_assortativity_coefficient(Gtemp))
                             return 2014
                         if str(temp) == 'nan':
+                            # this happens when it can't be computed as the network is not connected #is there a justification for computing this for just the largest connected component
                             temp = 0.0
                             option_metrics['assortativity_coefficient'].append(temp)
                 except:
@@ -1288,7 +1280,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
     try:
         basicA['no_of_isolated_nodes'] = [len(nx.isolates(GA))]
     except: return 1401
-    print('in basic metrics')
+
     basicA['isolated_nodes_removed'] = [[]]
     basicA['nodes_selected_to_fail'] = [[]] #only those nodes which are selected to fail
 
@@ -1309,7 +1301,7 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         except: return 1403
 
         basicB['isolated_nodes_removed'] = [[]]
-    print('done basics')
+
     if store_n_e_atts == True:
         temp = nx.degree(GA)
         for key in temp:GA.node[key]['degree']=temp[key]
@@ -1317,13 +1309,13 @@ def metrics_initial(GnetA, GnetB, metrics, failure, handling_variables, store_n_
         for key in temp:GB.node[key]['degree']=temp[key]
 
         GA.graph['no_of_nodes']=nx.number_of_nodes(GA)
-    print('starting metric calcs')
+
     # start of metric calculations
     var = metric_calcs(GA, U_GA, optionA, handling_variables, source_nodes_A, length, store_n_e_atts, logfilepath)
     if type(var) == int:
         return var
     else: optionA = var
-    print('done first lot of calcs')
+
     if failure['stand_alone'] == False:
         var = metric_calcs(GB, U_GB, optionB, handling_variables, source_nodes_B, length, store_n_e_atts, logfilepath)
 
@@ -1368,7 +1360,7 @@ def metric_calcs(G, U_G, metric_list, handling_variables, source_nodes_A, length
     Function which calculates the optional metrics for either network.
     '''
     #tools.write_to_log_file(logfilepath, 'In metric calcs.')
-    print('in metric calcs')
+
     connected_component_subgraphs = nx.connected_component_subgraphs(G)
     number_of_components =  nx.number_connected_components(G)
 
@@ -1571,7 +1563,7 @@ def metric_calcs(G, U_G, metric_list, handling_variables, source_nodes_A, length
             metric_list['diameter']=[nx.diameter(G)]
         except: return 1421
     tools.write_to_log_file(logfilepath, 'Finished doing initial metric calcs.')
-    print('completed metric calcs')
+
     var = metric_list
     return var
 
