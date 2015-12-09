@@ -32,13 +32,11 @@ def create_dict_of_removals(G,failures_to_occur,node_to_fail_list,method):
 
         if len(node_to_fail_list) < failures_to_occur:
             node_to_fail_list[key] = blist[key]
-        elif blist[key] > min_val:
-
+            
+        elif blist[key] > node_to_fail_list[min_val]:
             #remove min val
-            for key1 in blist.keys():
-                if blist[key1] == min_val:
-                    del node_to_fail_list[key1]
-                    break
+            del node_to_fail_list[min_val]
+            
             #add new val
             node_to_fail_list[key] = blist[key]
 
