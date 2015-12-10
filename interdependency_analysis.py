@@ -189,8 +189,7 @@ def main(GA, GB, parameters, logfilepath, viewfailure=False, when_to_calc_metric
                         optionA[key] = [optionA[key][-1]]
                 of.close()
                 tools.write_to_log_file(logfilepath,'Written some results out')
-            if i == 300: iterate = False
-
+            
             #-------------update log file (if file path set)-------------------
             try:
                 tools.write_to_log_file(logfilepath,'Step %s completed.(%s nodes left; %s edges left).' %(i,basicA['no_of_nodes'][-1],basicA['no_of_edges'][-1]))
